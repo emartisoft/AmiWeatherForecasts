@@ -1,0 +1,11 @@
+CC = sc
+
+LIBS = lib lib:sc.lib lib:amiga.lib lib:reaction.lib lib:httpget.lib lib:weather.lib lib:funcs.lib
+
+main.o: main.c
+	$(CC) $< link $(LIBS) INCLUDEDIR=netinclude: to AmiWeatherForecasts
+
+clean:
+	delete \#?.o \#?.lnk \#?.map \#?.gst
+
+ 

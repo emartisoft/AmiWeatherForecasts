@@ -1,0 +1,491 @@
+@database AmiWeatherForecasts.guide
+
+@Master AmiWeatherForecasts.texi
+
+@Width 72
+@WordWrap
+
+@Node Main "AmiWeatherForecasts.guide"
+@Next "About"
+
+     @{fg shine}AmiWeatherForecasts@{fg text}
+
+     This is a weather forecasting application that provides you with the latest weather information for any location. The application was built using the C programming language on Amiga OS 3.2 via SAS/C to retrieve weather information. This app provides weather forecast and time information on the right side of the title bar. The display of this information can be customized.
+
+     Weather forecast information is updated every 15 minutes. If you don't want to wait, use the Tool/Update menu to update immediately.
+
+     @{b}Disclaimer@{ub}
+
+     Use your own API key by making an account on OpenWeatherMap (https://openweathermap.org/)
+
+     Tested on OS3.2 only. It may be work on other WB.
+
+     @{" Settings " Link "Settings"}
+
+     @{" About    " Link "About"}
+
+     @{" License  " Link "License"}
+     
+     @{" History  " Link "History"}
+
+@EndNode
+
+@Node "Settings" "AmiWeatherForecasts.guide/Settings"
+@Next "About"
+@Prev "Main"
+@Toc "Main"
+
+     @{fg shine}Settings@{fg text}
+
+     After running the application, the window must be active in order to see the application menu. Click on the application located on the right side of the title bar with the left mouse button. If you hold down the right mouse button or click, the application menu will appear.
+
+     @{" AmiWeatherForecasts " Link ""}@{" Tools " Link ""}@{" Settings " Link ""}@{" Help " Link ""}
+     
+     From @{b}Settings/Add to User-Startup@{ub} menu item;
+     Each time your Amiga is booted, this application is executed.
+
+     From @{b}Settings/Remove from User-Startup@{ub} menu item;
+     It was removed command line from the User-Startup file to execute this application when startup your Amiga.
+
+     From @{b}Settings/Preferences@{ub} menu item;
+
+     @{b}LOCATION@{ub}
+     Enter the city and country code in the format below.
+     
+     'city_name,country_code'      @{" Country Codes " Link "Country Codes"}
+
+     for example:
+          berlin,de
+          london,uk
+          istanbul,tr
+          new york,us
+     
+     @{b}UNIT@{ub}
+
+     metric => celsius,
+     imperial => fahrenheit
+     
+     @{b}LANGUAGE@{ub}
+     @{" Languages " Link "Languages"}
+
+     @{b}DAYS@{ub}
+     Enter the short day names with a comma between them for your language.
+
+     for english:
+     Sun,Mon,Tue,Wed,Thu,Fri,Sat
+     for turkish:
+     Paz,Pzt,Sal,Crs,Per,Cum,Cts
+     
+     @{b}MONTHS@{ub}
+     Enter the short month names with a comma between them for your language.
+
+     for english:
+     Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec
+     for turkish:
+     Oca,Sub,Mar,Nis,May,Haz,Tem,Agu,Eyl,Eki,Kas,Ara
+
+     @{b}APIKEY@{ub}
+     Obtain this from your OpenWeather account. [https://openweathermap.org/]
+
+     @{b}Display@{ub}
+     Temperature is always displayed.
+     [icon] [temperature] [location] [description] [datetime] 
+
+     for example:
+     -------------------------
+     22'C New York [clear sky]
+     -------------------------
+     [ ] DISPLAYS ICON
+     [*] DISPLAYS LOCATION
+     [*] DISPLAYS DESCRIPTION
+     [ ] DISPLAYS DATE & TIME
+
+     @{b}Position of the window@{ub}
+     Calibration setting for x and y position of the window.
+
+     @{b}Height of the window@{ub}
+     Calibration setting for height of the window.
+
+@EndNode
+
+@Node "About" "AmiWeatherForecasts.guide/About"
+@Next "License"
+@Prev "About"
+@Toc "Main"
+
+     @{fg shine}About@{fg text}
+
+     AmiWeatherForecasts is coded by emarti, Murat Ozdemir
+
+     @{b}E-mail@{ub} 
+          dtemarti@gmail.com
+     @{b}WebSite@{ub} 
+          https://github.com/emartisoft/AmiWeatherForecasts
+
+     @{" MIT License " Link "License"}
+
+@EndNode
+
+@Node "License" "AmiWeatherForecasts.guide/License"
+@Next "History"
+@Prev "About"
+@Toc "Main"
+
+     MIT License
+
+     @{b}Copyright (c) 2023 AmiWeatherForecasts by emarti, Murat Ozdemir@{ub}
+
+     Permission is hereby granted, free of charge, to any person obtaining a copy
+     of this software and associated documentation files (the "Software"), to deal
+     in the Software without restriction, including without limitation the rights
+     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     copies of the Software, and to permit persons to whom the Software is
+     furnished to do so, subject to the following conditions:
+
+     The above copyright notice and this permission notice shall be included in all
+     copies or substantial portions of the Software.
+
+     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+     SOFTWARE.
+
+
+@EndNode
+
+
+@Node "History" "AmiWeatherForecasts.guide/History"
+@Prev "License"
+@Toc "Main"
+
+     @{fg shine}AmiWeatherForecasts History@{fg text}
+
+     @{b}1.1 (29.10.2023)@{ub} 
+          - Added new look menus
+          - Added settings
+          - Added this guide
+          - Added update menu to refresh weather forecasts immediately 
+          - Added customized display information for icon, location, description and datetime
+          - Added calibration setting for x and y position and height of the window.
+          - Added menu items for each time your Amiga is booted, this application is executed or not. 
+
+     @{b}1.0 Feb 2022@{ub} 
+          First but not published.
+
+@EndNode
+
+@Node "Languages" "AmiWeatherForecasts.guide/Languages"
+@Prev "Settings"
+@Toc "Main"
+
+     @{fg shine}Languages@{fg text}
+
+     af Afrikaans
+     al Albanian
+     ar Arabic
+     az Azerbaijani
+     bg Bulgarian
+     ca Catalan
+     cz Czech
+     da Danish
+     de German
+     el Greek
+     en English
+     eu Basque
+     fa Persian (Farsi)
+     fi Finnish
+     fr French
+     gl Galician
+     he Hebrew
+     hi Hindi
+     hr Croatian
+     hu Hungarian
+     id Indonesian
+     it Italian
+     ja Japanese
+     kr Korean
+     la Latvian
+     lt Lithuanian
+     mk Macedonian
+     no Norwegian
+     nl Dutch
+     pl Polish
+     pt Portuguese
+     pt_br Portugues Brasil
+     ro Romanian
+     ru Russian
+     sv, se	Swedish
+     sk Slovak
+     sl Slovenian
+     sp, es	Spanish
+     sr Serbian
+     th Thai
+     tr Turkish
+     ua, uk Ukrainian
+     vi Vietnamese
+     zh_cn Chinese Simplified
+     zh_tw Chinese Traditional
+     zu Zulu
+
+@EndNode
+
+@Node "Country Codes" "AmiWeatherForecasts.guide/Country Codes"
+@Prev "Settings"
+@Toc "Main"
+
+     @{fg shine}Country Codes@{fg text}
+
+     Afghanistan (AF)
+     Aland Islands (AX)
+     Albania (AL)
+     Algeria (DZ)
+     American Samoa (AS)
+     Andorra (AD)
+     Angola (AO)
+     Anguilla (AI)
+     Antarctica (AQ)
+     Antigua & Barbuda (AG)
+     Argentina (AR)
+     Armenia (AM)
+     Aruba (AW)
+     Australia (AU)
+     Austria (AT)
+     Azerbaijan (AZ)
+     Bahamas (BS)
+     Bahrain (BH)
+     Bangladesh (BD)
+     Barbados (BB)
+     Belarus (BY)
+     Belgium (BE)
+     Belize (BZ)
+     Benin (BJ)
+     Bermuda (BM)
+     Bhutan (BT)
+     Bolivia (BO)
+     Bosnia & Herzegovina (BA)
+     Botswana (BW)
+     Bouvet Island (BV)
+     Brazil (BR)
+     British Indian Ocean Territory (IO)
+     British Virgin Islands (VG)
+     Brunei (BN)
+     Bulgaria (BG)
+     Burkina Faso (BF)
+     Burundi (BI)
+     Cambodia (KH)
+     Cameroon (CM)
+     Canada (CA)
+     Cape Verde (CV)
+     Caribbean Netherlands (BQ)
+     Cayman Islands (KY)
+     Central African Republic (CF)
+     Chad (TD)
+     Chile (CL)
+     China (CN)
+     Christmas Island (CX)
+     Cocos (Keeling) Islands (CC)
+     Colombia (CO)
+     Comoros (KM)
+     Congo - Brazzaville (CG)
+     Congo - Kinshasa (CD)
+     Cook Islands (CK)
+     Costa Rica (CR)
+     Cote d'Ivoire (CI)
+     Croatia (HR)
+     Cuba (CU)
+     Curacao (CW)
+     Cyprus (CY)
+     Czechia (CZ)
+     Denmark (DK)
+     Djibouti (DJ)
+     Dominica (DM)
+     Dominican Republic (DO)
+     Ecuador (EC)
+     Egypt (EG)
+     El Salvador (SV)
+     Equatorial Guinea (GQ)
+     Eritrea (ER)
+     Estonia (EE)
+     Eswatini (SZ)
+     Ethiopia (ET)
+     Falkland Islands (FK)
+     Faroe Islands (FO)
+     Fiji (FJ)
+     Finland (FI)
+     France (FR)
+     French Guiana (GF)
+     French Polynesia (PF)
+     French Southern Territories (TF)
+     Gabon (GA)
+     Gambia (GM)
+     Georgia (GE)
+     Germany (DE)
+     Ghana (GH)
+     Gibraltar (GI)
+     Greece (GR)
+     Greenland (GL)
+     Grenada (GD)
+     Guadeloupe (GP)
+     Guam (GU)
+     Guatemala (GT)
+     Guernsey (GG)
+     Guinea (GN)
+     Guinea-Bissau (GW)
+     Guyana (GY)
+     Haiti (HT)
+     Heard & McDonald Islands (HM)
+     Honduras (HN)
+     Hong Kong SAR China (HK)
+     Hungary (HU)
+     Iceland (IS)
+     India (IN)
+     Indonesia (ID)
+     Iran (IR)
+     Iraq (IQ)
+     Ireland (IE)
+     Isle of Man (IM)
+     Israel (IL)
+     Italy (IT)
+     Jamaica (JM)
+     Japan (JP)
+     Jersey (JE)
+     Jordan (JO)
+     Kazakhstan (KZ)
+     Kenya (KE)
+     Kiribati (KI)
+     Kuwait (KW)
+     Kyrgyzstan (KG)
+     Laos (LA)
+     Latvia (LV)
+     Lebanon (LB)
+     Lesotho (LS)
+     Liberia (LR)
+     Libya (LY)
+     Liechtenstein (LI)
+     Lithuania (LT)
+     Luxembourg (LU)
+     Macao SAR China (MO)
+     Madagascar (MG)
+     Malawi (MW)
+     Malaysia (MY)
+     Maldives (MV)
+     Mali (ML)
+     Malta (MT)
+     Marshall Islands (MH)
+     Martinique (MQ)
+     Mauritania (MR)
+     Mauritius (MU)
+     Mayotte (YT)
+     Mexico (MX)
+     Micronesia (FM)
+     Moldova (MD)
+     Monaco (MC)
+     Mongolia (MN)
+     Montenegro (ME)
+     Montserrat (MS)
+     Morocco (MA)
+     Mozambique (MZ)
+     Myanmar (Burma) (MM)
+     Namibia (NA)
+     Nauru (NR)
+     Nepal (NP)
+     Netherlands (NL)
+     New Caledonia (NC)
+     New Zealand (NZ)
+     Nicaragua (NI)
+     Niger (NE)
+     Nigeria (NG)
+     Niue (NU)
+     Norfolk Island (NF)
+     North Korea (KP)
+     North Macedonia (MK)
+     Northern Mariana Islands (MP)
+     Norway (NO)
+     Oman (OM)
+     Pakistan (PK)
+     Palau (PW)
+     Palestinian Territories (PS)
+     Panama (PA)
+     Papua New Guinea (PG)
+     Paraguay (PY)
+     Peru (PE)
+     Philippines (PH)
+     Pitcairn Islands (PN)
+     Poland (PL)
+     Portugal (PT)
+     Puerto Rico (PR)
+     Qatar (QA)
+     Reunion (RE)
+     Romania (RO)
+     Russia (RU)
+     Rwanda (RW)
+     Samoa (WS)
+     San Marino (SM)
+     Sao Tome & Principe (ST)
+     Saudi Arabia (SA)
+     Senegal (SN)
+     Serbia (RS)
+     Seychelles (SC)
+     Sierra Leone (SL)
+     Singapore (SG)
+     Sint Maarten (SX)
+     Slovakia (SK)
+     Slovenia (SI)
+     Solomon Islands (SB)
+     Somalia (SO)
+     South Africa (ZA)
+     South Georgia & South Sandwich Islands (GS)
+     South Korea (KR)
+     South Sudan (SS)
+     Spain (ES)
+     Sri Lanka (LK)
+     St. Barthelemy (BL)
+     St. Helena (SH)
+     St. Kitts & Nevis (KN)
+     St. Lucia (LC)
+     St. Martin (MF)
+     St. Pierre & Miquelon (PM)
+     St. Vincent & Grenadines (VC)
+     Sudan (SD)
+     Suriname (SR)
+     Svalbard & Jan Mayen (SJ)
+     Sweden (SE)
+     Switzerland (CH)
+     Syria (SY)
+     Taiwan (TW)
+     Tajikistan (TJ)
+     Tanzania (TZ)
+     Thailand (TH)
+     Timor-Leste (TL)
+     Togo (TG)
+     Tokelau (TK)
+     Tonga (TO)
+     Trinidad & Tobago (TT)
+     Tunisia (TN)
+     Turkey (TR)
+     Turkmenistan (TM)
+     Turks & Caicos Islands (TC)
+     Tuvalu (TV)
+     U.S. Outlying Islands (UM)
+     U.S. Virgin Islands (VI)
+     Uganda (UG)
+     Ukraine (UA)
+     United Arab Emirates (AE)
+     United Kingdom (GB)
+     United States (US)
+     Uruguay (UY)
+     Uzbekistan (UZ)
+     Vanuatu (VU)
+     Vatican City (VA)
+     Venezuela (VE)
+     Vietnam (VN)
+     Wallis & Futuna (WF)
+     Western Sahara (EH)
+     Yemen (YE)
+     Zambia (ZM)
+     Zimbabwe (ZW)
+
+@EndNode
