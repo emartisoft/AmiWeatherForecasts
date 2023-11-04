@@ -17,6 +17,14 @@ License: MIT
 
 Version History
 ===============
+1.2 (04.11.2023)
+- According to SnoopDos, continuous querying of
+the TZ variable is blocked.
+- Added set date and time manually menu
+- Added sync system time using sntp menu
+- It synchronizes the system time using sntp if avaliable
+an internet connection when executing firstly.
+
 1.1 (29.10.2023)
 - Added new look menus
 - Added settings
