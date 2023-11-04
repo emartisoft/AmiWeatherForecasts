@@ -1,5 +1,7 @@
 /* 
 AmiWeatherForecasts by emarti, Murat Ozdemir 
+
+V1.2 Nov 2023
 V1.1 Oct 2023
 V1.0 Feb 2022 (not published)
 */
@@ -7,11 +9,12 @@ V1.0 Feb 2022 (not published)
 #include "includes.h"
 #include <weather.h>
 #include <httpgetlib.h>
+#include <funcs.h>
 #include "version.h"
 #include "images.h"
-#include <funcs.h>
 
 #define USERSTARTUP "SYS:S/User-Startup"
+#define COPIEDUSERSTARTUP "RAM:T/User-Startup"
 
 char location[BUFFER/8];
 char unit[10];
@@ -53,18 +56,26 @@ struct NewWindow NewWindow =
     WBENCHSCREEN
 };
 
+time_t t;
+BOOL first;
+char screenText[BUFFER/2];
+char strdatetime[0xFF];
+struct tm *dt;
+unsigned short curMin;
+
 char txt[BUFFER/4];
 int indx;
 int newWidth;
 int barHeight;
+int posXforStrDatetime;
 char** wdata;    
 
-char wf[50] = "RAM:weather.json";
+char wf[50] = "RAM:T/weather.json";
 char weatherText[BUFFER] = "";
 char weatherURL[BUFFER/2] = ""; 
 int refresh;
 
-void write(char *text);
+void writeInfo(char *text);
 void update(void);
 void beforeClosing(void);
 
@@ -80,6 +91,9 @@ void loadDefaults(void);
 
 BOOL IsAddedToUserStartup(void);
 void RemoveLineFromUserStartup(void);
+
+#define PREFTIME    "SYS:Prefs/Time"
+#define SNTP        "SYS:C/sntp pool.ntp.org >NIL:"
 
 #define CLANGCOUNT  47
 STRPTR clanguages[] = {
@@ -141,7 +155,10 @@ struct NewMenu amiMenuNewMenu[] =
     NM_ITEM , (STRPTR)"Quit"                      	,  "Q" , 0, 0L, (APTR)~0,
 	
     NM_TITLE, (STRPTR)"Tools"              		    ,  NULL , 0, NULL, (APTR)~0,
-	NM_ITEM , (STRPTR)"Update"                 	    ,  "U" , 0, 0L, (APTR)~0,
+	NM_ITEM , (STRPTR)"Update Weahter Forecast"     ,  "U" , 0, 0L, (APTR)~0,
+    NM_ITEM , NM_BARLABEL                          	,  NULL , 0, 0L, (APTR)~0,
+	NM_ITEM , (STRPTR)"Set Date and Time Manually"  ,  NULL , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)"Sync System Time using SNTP" ,  NULL , 0, 0L, (APTR)~0,
 
     NM_TITLE, (STRPTR)"Settings"                    ,  NULL , 0, NULL, (APTR)~0,
     NM_ITEM , (STRPTR)"Preferences"                 ,  "P" , 0, 0L, (APTR)~0,
@@ -214,6 +231,15 @@ struct EasyStruct RemoveFromUserStartupW =
     "Ok"
 };
 
+struct EasyStruct SNTPMessage =
+{
+    sizeof(struct EasyStruct),
+    0,
+    "Warning - "APPNAME,
+    "SNTP not found in SYS:C drawer. Download it from Aminet.net.\nSystem time could not be synchronized.",
+    "Ok"
+};
+
 void loadDefaults(void)
 {
     strcpy(location, "istanbul,tr");
@@ -228,15 +254,35 @@ void loadDefaults(void)
     strcpy(displayDateTime,"1");
     addX = addY = addH = 0;
 }
+
+void executeApp(STRPTR path)
+{                                   
+    ClearMenuStrip(Window);
+    Execute(path, NULL, NULL);
+    SetMenuStrip(Window, amiMenu);
+}
+
+void prepareAndWriteInfo(void)
+{
+    time(&t);
+    dt=localtime(&t);
+    refresh=dt->tm_sec*4;
+    curMin=dt->tm_min;
+    sprintf(strdatetime, " %s %d, %s %02d:%02d ", amonths[dt->tm_mon], dt->tm_mday, adays[dt->tm_wday], dt->tm_hour, dt->tm_min);
+    sprintf(screenText, " %s ", wdata[2]);
+    if(!STREQUAL(displayLocation, "0")) { strcat(screenText, wdata[1]); strcat(screenText, " ");}
+    if(!STREQUAL(displayDescription, "0")) { strcat(screenText, "["); strcat(screenText, wdata[0]); strcat(screenText, "] ");}
+    if(!STREQUAL(displayDateTime, "0")) { strcat(screenText, strdatetime);}
+
+    newWidth = 2 + strlen(screenText);
+    posXforStrDatetime = (newWidth - strlen(strdatetime))*RP->TxWidth;
+
+}
     
 int main(int argc, char **argv)
 {
     register BOOL loop = TRUE;
-    register unsigned short curMin=99;
-    register struct tm *dt;
     register struct IntuiMessage *msg;
-    register char screenText[BUFFER/2];
-    char strdatetime[0xFF];
 
     // Pref file
     if(!fileExist(PREFFILEPATH))
@@ -253,7 +299,6 @@ int main(int argc, char **argv)
 	strcpy(manualPath, "SYS:Utilities/MultiView ");
 	strcat(manualPath, appPath);
 	strcat(manualPath, ".guide");
-
     
     wdata = (char**)malloc(4*sizeof(char*));
     adays = (char**)malloc(7*sizeof(char*));
@@ -295,49 +340,48 @@ int main(int argc, char **argv)
     // get weather info
     update();
 
-    barHeight = screen->BarHeight+1;// screen->WBorTop + screen->Font->ta_YSize;
+    barHeight = screen->BarHeight+1;
 
     VisualInfoPtr = GetVisualInfo(screen, NULL);
 
     makeMenu(VisualInfoPtr);
-    SetMenuStrip(Window, amiMenu);
+    SetMenuStrip(Window, amiMenu); 
+
+    prepareAndWriteInfo();
+
+    if (fileExist("SYS:C/sntp"))
+    {
+         executeApp(SNTP);
+         update();
+    }
 
     while(loop)
     {
-        time_t t = time(NULL);
-        dt=localtime(&t);
-        if ((curMin!=dt->tm_min) || (refresh < 5))
-        {
-            curMin=dt->tm_min;//sec; 
-            
-            sprintf(strdatetime, " %s %02d, %s %02d:%02d ", amonths[dt->tm_mon], dt->tm_mday, adays[dt->tm_wday], dt->tm_hour, dt->tm_min);
-            sprintf(screenText, " %s ", wdata[2]);
-            if(!STREQUAL(displayLocation, "0")) { strcat(screenText, wdata[1]); strcat(screenText, " ");}
-            if(!STREQUAL(displayDescription, "0")) { strcat(screenText, "["); strcat(screenText, wdata[0]); strcat(screenText, "] ");}
-            if(!STREQUAL(displayDateTime, "0")) { strcat(screenText, strdatetime);}
 
-            
-            newWidth = 2 + strlen(screenText);
-            ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width-( (newWidth+4)*RP->TxWidth ) + addX, -1 + addY, newWidth*RP->TxWidth, barHeight + addH);
-            write(screenText);
-            refresh++;
-            
-            // update periodically
-            if((curMin%PERIOD4UPDATE==0)&&(refresh>5)) update();
-            
-        } 
+        writeInfo(screenText);
+        ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width-( (newWidth+4)*RP->TxWidth ) + addX, -1 + addY, newWidth*RP->TxWidth, barHeight + addH);
+
+        // update periodically
+        if((curMin%PERIOD4UPDATE==0)&&((refresh/4)%60==15)) update();
+
+        if ((((refresh/4)%60)==0)||first)
+        {
+            first=FALSE;
+            prepareAndWriteInfo();
+        }
          
         while ((msg = (struct IntuiMessage*)GetMsg( Window->UserPort)))
         {
             UWORD code = msg->Code;
-            char cmd[512];
+            char cmd[PATH_MAX];
+
 
             switch (msg->Class)
             {
             case IDCMP_VANILLAKEY:
                 switch(msg->Code)
                 {
-                    case 0x1B:                          // press ESC to exit
+                    case 0x1B: // press ESC to exit
                         loop=FALSE;
                         break;
                     default:
@@ -345,30 +389,76 @@ int main(int argc, char **argv)
                 }
                 break;
 
+            case IDCMP_MOUSEBUTTONS:
+
+                switch (code)
+                {
+                    case SELECTDOWN :                                   
+
+                        if (msg->MouseX>posXforStrDatetime)
+                        {
+                           executeApp(PREFTIME);
+                           update();
+                        }
+                        break;
+
+                    default:
+                        break;
+                };
+                break;
+
             case IDCMP_MENUPICK: 
                 while (code != MENUNULL) { 
                     struct MenuItem *item = ItemAddress(amiMenu, code); 
                     struct IntuiText *text = item->ItemFill;
-                    if STREQUAL(text->IText, "About") EasyRequest(Window, &aboutReq, NULL, NULL);
+                    if STREQUAL(text->IText, "About")
+                    {
+                        ClearMenuStrip(Window);
+                        EasyRequest(Window, &aboutReq, NULL, NULL);
+                        SetMenuStrip(Window, amiMenu);
+                    }
                     else if STREQUAL(text->IText, "Quit") 
                                 loop=FALSE;
-                    else if STREQUAL(text->IText, "Update") 
+                    else if STREQUAL(text->IText, "Update Weahter Forecast")
                                 update();
                     else if STREQUAL(text->IText, "Manual") 
-                                Execute(manualPath, NULL, NULL);
+                                executeApp(manualPath);
                     else if STREQUAL(text->IText, "Preferences") 
                                 createPreferencesWin();
+                    else if STREQUAL(text->IText, "Set Date and Time Manually")
+                    {
+                        executeApp(PREFTIME);
+                        update();
+                    }
+                    else if STREQUAL(text->IText, "Sync System Time using SNTP")
+                    {
+                        if (fileExist("SYS:C/sntp"))
+                        {
+                           executeApp(SNTP);
+                           update();
+                        }
+                        else
+                        {
+                           ClearMenuStrip(Window);
+                           EasyRequest(Window, &SNTPMessage, NULL, NULL);
+                           SetMenuStrip(Window, amiMenu);
+                        }
+                    }
                     else if STREQUAL(text->IText, "Add to User-Startup")
                             {
                                 if (IsAddedToUserStartup())
                                 {
-                                    EasyRequest(Window, &addedUserStartupPreviously, NULL, NULL);
+                                   ClearMenuStrip(Window);
+                                   EasyRequest(Window, &addedUserStartupPreviously, NULL, NULL);
+                                   SetMenuStrip(Window, amiMenu);
                                 }
                                 else
                                 {
                                     sprintf(cmd, "echo \"*N*NRun >NIL: %s ; %s\" >> %s >NIL:", appPath, APPNAME, USERSTARTUP);      
-                                    Execute(cmd, NULL, NULL);
+                                    executeApp(cmd);
+                                    ClearMenuStrip(Window);
                                     EasyRequest(Window, &addedUserStartup, NULL, NULL);
+                                    SetMenuStrip(Window, amiMenu);
                                 }
                             }
                     else if STREQUAL(text->IText, "Remove from User-Startup")
@@ -376,11 +466,15 @@ int main(int argc, char **argv)
                                 if(IsAddedToUserStartup())
                                 {
                                     RemoveLineFromUserStartup();
+                                    ClearMenuStrip(Window);
                                     EasyRequest(Window, &RemoveFromUserStartup, NULL, NULL);
+                                    SetMenuStrip(Window, amiMenu);
                                 }
                                 else
                                 {
+                                    ClearMenuStrip(Window);
                                     EasyRequest(Window, &RemoveFromUserStartupW, NULL, NULL);
+                                    SetMenuStrip(Window, amiMenu);
                                 }
                             }
                                 
@@ -396,14 +490,14 @@ int main(int argc, char **argv)
         }
             
         Delay(WAITONESECOND/4);
-        
+        refresh++;
     }
 
     beforeClosing();
     return 0x00;
 }
 
-void write(char *text)
+void writeInfo(char *text)
 {
     int i,ii;
     SetAPen(RP,0x02);
@@ -453,8 +547,8 @@ void update(void)
     {
         Execute("delete RAM:weather.json >NIL:",NULL,NULL);
     }
-    
-    refresh = 0;
+                 
+    first=TRUE;
 }
 
 void beforeClosing()
@@ -605,6 +699,8 @@ void createPreferencesWin(void)
     dLocation = STREQUAL(displayLocation, "1")?TRUE:FALSE;
     dDescription = STREQUAL(displayDescription, "1")?TRUE:FALSE;
     dDatetime = STREQUAL(displayDateTime, "1")?TRUE:FALSE;
+
+    ClearMenuStrip(Window);
 	
 	if (!(createPreferencesWinObj = NewObject
     (   WINDOW_GetClass(),
@@ -617,11 +713,11 @@ void createPreferencesWin(void)
 		WA_SizeGadget, 			  TRUE,
         WA_SmartRefresh,          TRUE,
         WA_MinWidth,              512,
-        WA_MinHeight,             30,
+        WA_MinHeight,             300,
         WA_MaxWidth,              512,
         WA_MaxHeight,             -1,
         WA_InnerWidth,                 512,
-        WA_InnerHeight,                30,
+        WA_InnerHeight,                300,
         WA_Left,                  0,
         WA_Top,                   0,
         WA_SizeBRight,            FALSE,
@@ -971,6 +1067,7 @@ void createPreferencesWin(void)
 		DisposeObject(createPreferencesWinObj);
         createPreferencesWinObj = NULL;
     }
+    SetMenuStrip(Window, amiMenu);
 }
 
 BOOL IsAddedToUserStartup(void)
@@ -999,13 +1096,12 @@ void RemoveLineFromUserStartup(void)
     BPTR fpn;
     char cmd[PATH_MAX+32];
     char satir[PATH_MAX];
+                                                                                                                                  
+    sprintf(cmd, "copy %s to RAM:T/ QUIET >NIL:", USERSTARTUP);
+    Execute(cmd, NULL, NULL);                                
 
-    // The user start-up file was backed up in this drawer with the named 'User-StartupBACKUP'. And then flushes User-Startup file.
-    sprintf(cmd, "copy %s to %sBACKUP QUIET >NIL: && echo %s > %s", USERSTARTUP, USERSTARTUP, " ", USERSTARTUP);      
-    Execute(cmd, NULL, NULL);
-
-    fp = Open(USERSTARTUP"BACKUP", MODE_OLDFILE);
-    fpn = Open(USERSTARTUP, MODE_OLDFILE);
+    fp = Open(COPIEDUSERSTARTUP, MODE_OLDFILE);
+    fpn = Open(USERSTARTUP, MODE_NEWFILE);
 
     if (fp && fpn)
 	{   
@@ -1019,6 +1115,12 @@ void RemoveLineFromUserStartup(void)
         
         Close(fp);
         Close(fpn);
+    }
+
+
+        if (fileExist(COPIEDUSERSTARTUP))
+    {
+        Execute("delete "COPIEDUSERSTARTUP" >NIL:",NULL,NULL);
     }
     
 }

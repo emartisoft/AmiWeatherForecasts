@@ -12,11 +12,15 @@
 
      This is a weather forecasting application that provides you with the latest weather information for any location. The application was built using the C programming language on Amiga OS 3.2 via SAS/C to retrieve weather information. This app provides weather forecast and time information on the right side of the title bar. The display of this information can be customized.
 
-     Weather forecast information is updated every 15 minutes. If you don't want to wait, use the Tool/Update menu to update immediately.
+     Weather forecast information is updated every 15 minutes. If you don't want to wait, use the @{i}Tool/Update@{ui} menu to update immediately.
+
+     It synchronizes the system time using sntp if avaliable an internet connection when executing firstly. Additionally, @{i}Tools/Set Date and Time Manually @{ui} and @{i}Sync system time using SNTP@{ui} menuitems can also be used.
 
      @{b}Disclaimer@{ub}
 
      Use your own API key by making an account on OpenWeatherMap (https://openweathermap.org/)
+
+     SNTP (to sync system time) can be downloaded from aminet.net (http://aminet.net/package/comm/net/sntp)
 
      Tested on OS3.2 only. It may be work on other WB.
 
@@ -55,10 +59,10 @@
      'city_name,country_code'      @{" Country Codes " Link "Country Codes"}
 
      for example:
-          berlin,de
+     @{i}     berlin,de
           london,uk
           istanbul,tr
-          new york,us
+          new york,us   @{ui}
      
      @{b}UNIT@{ub}
 
@@ -72,17 +76,17 @@
      Enter the short day names with a comma between them for your language.
 
      for english:
-     Sun,Mon,Tue,Wed,Thu,Fri,Sat
+     @{i}Sun,Mon,Tue,Wed,Thu,Fri,Sat @{ui}
      for turkish:
-     Paz,Pzt,Sal,Crs,Per,Cum,Cts
+     @{i}Paz,Pzt,Sal,Crs,Per,Cum,Cts @{ui}
      
      @{b}MONTHS@{ub}
      Enter the short month names with a comma between them for your language.
 
      for english:
-     Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec
+     @{i}Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec @{ui}
      for turkish:
-     Oca,Sub,Mar,Nis,May,Haz,Tem,Agu,Eyl,Eki,Kas,Ara
+     @{i}Oca,Sub,Mar,Nis,May,Haz,Tem,Agu,Eyl,Eki,Kas,Ara @{ui}
 
      @{b}APIKEY@{ub}
      Obtain this from your OpenWeather account. [https://openweathermap.org/]
@@ -162,6 +166,12 @@
 @Toc "Main"
 
      @{fg shine}AmiWeatherForecasts History@{fg text}
+
+     @{b}1.2 (04.11.2023)@{ub}
+          - According to SnoopDos, continuous querying of the TZ variable is blocked.
+          - Added set date and time manually menu
+          - Added sync system time using sntp menu
+          - It synchronizes the system time using sntp if avaliable an internet connection when executing firstly.
 
      @{b}1.1 (29.10.2023)@{ub} 
           - Added new look menus
