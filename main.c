@@ -62,6 +62,7 @@ char screenText[BUFFER/2];
 char strdatetime[0xFF];
 struct tm *dt;
 unsigned short curMin;
+int machineGun;
 
 char txt[BUFFER/4];
 int indx;
@@ -275,10 +276,13 @@ void prepareAndWriteInfo(void)
     if(!STREQUAL(displayDateTime, "0")) { strcat(screenText, strdatetime);}
 
     newWidth = 2 + strlen(screenText);
-    posXforStrDatetime = (newWidth - strlen(strdatetime))*RP->TxWidth;
+    if(!STREQUAL(displayDateTime, "0"))
+        posXforStrDatetime = (newWidth - strlen(strdatetime))*RP->TxWidth;
+    else
+        posXforStrDatetime = newWidth*RP->TxWidth;
 
 }
-    
+
 int main(int argc, char **argv)
 {
     register BOOL loop = TRUE;
@@ -347,20 +351,17 @@ int main(int argc, char **argv)
     makeMenu(VisualInfoPtr);
     SetMenuStrip(Window, amiMenu); 
 
-    prepareAndWriteInfo();
-
     if (fileExist("SYS:C/sntp"))
     {
          executeApp(SNTP);
          update();
     }
 
+    prepareAndWriteInfo();
+    machineGun=0;
+
     while(loop)
     {
-
-        writeInfo(screenText);
-        ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width-( (newWidth+4)*RP->TxWidth ) + addX, -1 + addY, newWidth*RP->TxWidth, barHeight + addH);
-
         // update periodically
         if((curMin%PERIOD4UPDATE==0)&&((refresh/4)%60==15)) update();
 
@@ -368,7 +369,12 @@ int main(int argc, char **argv)
         {
             first=FALSE;
             prepareAndWriteInfo();
+            writeInfo(screenText);
         }
+
+        if(machineGun<2) writeInfo(screenText);
+        machineGun++;
+        ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width-( (newWidth+4)*RP->TxWidth ) + addX, -1 + addY, newWidth*RP->TxWidth, barHeight + addH);
          
         while ((msg = (struct IntuiMessage*)GetMsg( Window->UserPort)))
         {
