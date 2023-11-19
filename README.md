@@ -11,12 +11,23 @@ Weather forecast information is updated every 15 minutes.
 If you don't want to wait, use the Tool/Update menu to update 
 immediately.
 
+It synchronizes the system time using sntp,
+if avaliable an internet connection when executing firstly.
+
+It has feature that finding of your location automatically.
+
 Tested on OS3.2 only. It may be work on other WB.
 
 License: MIT
 
 Version History
 ===============
+1.3 (17.11.2023)
+- Using screen text font for GUI (Prefs/Font)
+- Added customize color settings
+- Changed min and max values for 'Add Pos X and Y'
+- Added feature that finding of your location automatically
+
 1.2 (04.11.2023)
 - According to SnoopDos, continuous querying of
 the TZ variable is blocked.
@@ -49,4 +60,4 @@ application is executed or not.
 
 ![setup2](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/setup2.png?raw=true)
 
-![preferences](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/preferences.png?raw=true)
+![preferences](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/preferences1.3.png?raw=true)
