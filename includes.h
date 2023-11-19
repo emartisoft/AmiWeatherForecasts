@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <exec/memory.h>
 #include <exec/types.h>
 #include <libraries/gadtools.h>
 #include <intuition/intuition.h>
@@ -29,6 +30,10 @@
 #include <gadgets/chooser.h>
 #include <proto/string.h>
 #include <gadgets/string.h>
+#include <proto/palette.h>
+#include <gadgets/palette.h>
+#include <proto/space.h>
+#include <gadgets/space.h>
 
 #include <workbench/workbench.h>
 #include <proto/dos.h>

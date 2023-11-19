@@ -2,9 +2,9 @@
 #define VERSION_H
 // version
 #define MAJOR   "1"
-#define MINOR   "2"
-#define BUILD   "0510"
-#define DATE    "04.11.2023"
+#define MINOR   "3"
+#define BUILD   "1611"
+#define DATE    "17.11.2023"
 #define CODER   "emarti, Murat OZDEMIR"
 #define APPNAME "AmiWeatherForecasts"
 

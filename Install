@@ -1,9 +1,9 @@
 ;-----------------------------------------------
 ; AmiWeatherForecasts Setup Script
 ; This file is part of AmiWeatherForecasts.
-; AmiWeatherForecasts by emarti, Murat Özdemir (C) 2023
-; Version: 1.0
-; Date: Oct 28, 2023
+; AmiWeatherForecasts by emarti, Murat Ozdemir (C) 2023
+; Version: 1.1
+; Date: Nov 18, 2023
 ;-----------------------------------------------
 
 echo "*e[>1m*e[32;41m*e[0;0H*e[J"
@@ -33,6 +33,7 @@ Else
 
     If WARN
         cls
+        delete SYS:Prefs/Env-Archive/AmiWeatherForecasts.prefs >NIL:
         echo ""
         echo " Copying Files"
         echo " -------------"

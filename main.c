@@ -1,9 +1,12 @@
 /* 
+
 AmiWeatherForecasts by emarti, Murat Ozdemir 
 
+V1.3 Nov 2023
 V1.2 Nov 2023
 V1.1 Oct 2023
 V1.0 Feb 2022 (not published)
+
 */
 
 #include "includes.h"
@@ -27,6 +30,8 @@ char displayLocation[2];
 char displayDescription[2];
 char displayDateTime[2];
 int addX, addY, addH;
+ULONG textColor, backgroundColor;
+ULONG sunColor, cloudColor, lcloudColor, dcloudColor;
 
 char **amonths;
 char **adays;
@@ -46,7 +51,6 @@ struct NewWindow NewWindow =
     1, 0x0A,
     0,1,
     IDCMP_VANILLAKEY|
-    IDCMP_MOUSEBUTTONS|
     IDCMP_MENUPICK,
     WFLG_BORDERLESS|
     WFLG_NEWLOOKMENUS|
@@ -55,6 +59,8 @@ struct NewWindow NewWindow =
     0,0,0,0,
     WBENCHSCREEN
 };
+
+struct TextFont *screenFont;
 
 time_t t;
 BOOL first;
@@ -68,7 +74,7 @@ char txt[BUFFER/4];
 int indx;
 int newWidth;
 int barHeight;
-int posXforStrDatetime;
+int newWindowWidth;
 char** wdata;    
 
 char wf[50] = "RAM:T/weather.json";
@@ -76,7 +82,7 @@ char weatherText[BUFFER] = "";
 char weatherURL[BUFFER/2] = ""; 
 int refresh;
 
-void writeInfo(char *text);
+void writeInfo(void);
 void update(void);
 void beforeClosing(void);
 
@@ -95,6 +101,12 @@ void RemoveLineFromUserStartup(void);
 
 #define PREFTIME    "SYS:Prefs/Time"
 #define SNTP        "SYS:C/sntp pool.ntp.org >NIL:"
+#define GETEXTIP    "SYS:C/GetExtIP > RAM:T/ip.txt"
+
+char iptxt[15];
+char locationCsv[BUFFER/2];
+char ipapiurl[64];
+char **locationData;
 
 #define CLANGCOUNT  47
 STRPTR clanguages[] = {
@@ -148,28 +160,38 @@ STRPTR clanguages[] = {
 
 ULONG getIndexChooser(STRPTR val);
 
+#define MABOUT              "About" 
+#define MQUIT               "Quit"
+#define MUPDATEWF           "Update Weahter Forecast"           
+#define MSETDTM             "Set Date and Time Manually"
+#define MSYNCSTUS           "Sync System Time using SNTP"
+#define MPREF               "Preferences"
+#define MAU                 "Add to User-Startup"
+#define MRU                 "Remove from User-Startup"
+#define MMANUAL             "Manual"                      
+
 struct NewMenu amiMenuNewMenu[] =
 {
     NM_TITLE, (STRPTR)"AmiWeatherForecasts"         ,  NULL , 0, NULL, (APTR)~0,
-    NM_ITEM , (STRPTR)"About"               		,  "A" , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)MABOUT               		    ,  "A" , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                          	,  NULL , 0, 0L, (APTR)~0,
-    NM_ITEM , (STRPTR)"Quit"                      	,  "Q" , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)MQUIT                      	,  "Q" , 0, 0L, (APTR)~0,
 	
     NM_TITLE, (STRPTR)"Tools"              		    ,  NULL , 0, NULL, (APTR)~0,
-	NM_ITEM , (STRPTR)"Update Weahter Forecast"     ,  "U" , 0, 0L, (APTR)~0,
+	NM_ITEM , (STRPTR)MUPDATEWF                     ,  "U" , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                          	,  NULL , 0, 0L, (APTR)~0,
-	NM_ITEM , (STRPTR)"Set Date and Time Manually"  ,  NULL , 0, 0L, (APTR)~0,
-    NM_ITEM , (STRPTR)"Sync System Time using SNTP" ,  NULL , 0, 0L, (APTR)~0,
+	NM_ITEM , (STRPTR)MSETDTM                       ,  NULL , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)MSYNCSTUS                     ,  NULL , 0, 0L, (APTR)~0,
 
     NM_TITLE, (STRPTR)"Settings"                    ,  NULL , 0, NULL, (APTR)~0,
-    NM_ITEM , (STRPTR)"Preferences"                 ,  "P" , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)MPREF                         ,  "P" , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                          	,  NULL , 0, 0L, (APTR)~0,
-    NM_ITEM , (STRPTR)"Add to User-Startup"         ,  NULL , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)MAU                           ,  NULL , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                           ,  NULL , 0, 0L, (APTR)~0,
-    NM_ITEM , (STRPTR)"Remove from User-Startup"    ,  NULL , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)MRU                           ,  NULL , 0, 0L, (APTR)~0,
     
     NM_TITLE, (STRPTR)"Help"                        ,  NULL , 0, NULL, (APTR)~0,
-    NM_ITEM , (STRPTR)"Manual"                      ,  "M" , 0, 0L, (APTR)~0,
+    NM_ITEM , (STRPTR)MMANUAL                       ,  "M" , 0, 0L, (APTR)~0,
 	
     NM_END  , NULL                                  ,  NULL , 0, 0L, (APTR)~0
 };
@@ -241,6 +263,42 @@ struct EasyStruct SNTPMessage =
     "Ok"
 };
 
+struct EasyStruct GetExtIPMessage =
+{
+    sizeof(struct EasyStruct),
+    0,
+    "Warning - "APPNAME,
+    "GetExtIP not found in SYS:C drawer. Download it from Aminet.net.",
+    "Ok"
+};
+
+struct EasyStruct ColorControl =
+{
+    sizeof(struct EasyStruct),
+    0,
+    "Warning - "APPNAME,
+    "Your color choices must be different from each other.\nPlease, try again.",
+    "Ok"
+};
+
+struct EasyStruct DayControl =
+{
+    sizeof(struct EasyStruct),
+    0,
+    "Warning - "APPNAME,
+    "There must be 6 comma characters between the days.\nPlease, try again.",
+    "Ok"
+};
+
+struct EasyStruct MonthControl =
+{
+    sizeof(struct EasyStruct),
+    0,
+    "Warning - "APPNAME,
+    "There must be 11 comma characters between the months.\nPlease, try again.",
+    "Ok"
+};
+
 void loadDefaults(void)
 {
     strcpy(location, "istanbul,tr");
@@ -254,6 +312,13 @@ void loadDefaults(void)
     strcpy(displayDescription,"1");
     strcpy(displayDateTime,"1");
     addX = addY = addH = 0;
+    textColor = 1;
+    backgroundColor = 2;
+    sunColor = 11;
+    cloudColor = 15;
+    lcloudColor = 5;
+    dcloudColor = 4;
+    
 }
 
 void executeApp(STRPTR path)
@@ -276,11 +341,6 @@ void prepareAndWriteInfo(void)
     if(!STREQUAL(displayDateTime, "0")) { strcat(screenText, strdatetime);}
 
     newWidth = 2 + strlen(screenText);
-    if(!STREQUAL(displayDateTime, "0"))
-        posXforStrDatetime = (newWidth - strlen(strdatetime))*RP->TxWidth;
-    else
-        posXforStrDatetime = newWidth*RP->TxWidth;
-
 }
 
 int main(int argc, char **argv)
@@ -369,18 +429,17 @@ int main(int argc, char **argv)
         {
             first=FALSE;
             prepareAndWriteInfo();
-            writeInfo(screenText);
+            writeInfo();
         }
 
-        if(machineGun<2) writeInfo(screenText);
+        if(machineGun<2) writeInfo();
         machineGun++;
-        ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width-( (newWidth+4)*RP->TxWidth ) + addX, -1 + addY, newWidth*RP->TxWidth, barHeight + addH);
+        ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH + addX, -1 + addY, newWindowWidth, barHeight + addH);
          
         while ((msg = (struct IntuiMessage*)GetMsg( Window->UserPort)))
         {
             UWORD code = msg->Code;
             char cmd[PATH_MAX];
-
 
             switch (msg->Class)
             {
@@ -395,48 +454,35 @@ int main(int argc, char **argv)
                 }
                 break;
 
-            case IDCMP_MOUSEBUTTONS:
-
-                switch (code)
-                {
-                    case SELECTDOWN :                                   
-
-                        if (msg->MouseX>posXforStrDatetime)
-                        {
-                           executeApp(PREFTIME);
-                           update();
-                        }
-                        break;
-
-                    default:
-                        break;
-                };
-                break;
-
             case IDCMP_MENUPICK: 
                 while (code != MENUNULL) { 
                     struct MenuItem *item = ItemAddress(amiMenu, code); 
                     struct IntuiText *text = item->ItemFill;
-                    if STREQUAL(text->IText, "About")
+                    if STREQUAL(text->IText, MABOUT)
                     {
                         ClearMenuStrip(Window);
                         EasyRequest(Window, &aboutReq, NULL, NULL);
                         SetMenuStrip(Window, amiMenu);
                     }
-                    else if STREQUAL(text->IText, "Quit") 
+                    else if STREQUAL(text->IText, MQUIT) 
                                 loop=FALSE;
-                    else if STREQUAL(text->IText, "Update Weahter Forecast")
+                    else if STREQUAL(text->IText, MUPDATEWF)
                                 update();
-                    else if STREQUAL(text->IText, "Manual") 
+                    else if STREQUAL(text->IText, MMANUAL) 
                                 executeApp(manualPath);
-                    else if STREQUAL(text->IText, "Preferences") 
-                                createPreferencesWin();
-                    else if STREQUAL(text->IText, "Set Date and Time Manually")
+                    else if STREQUAL(text->IText, MPREF) 
+                               { 
+                                    createPreferencesWin();
+                                    prepareAndWriteInfo();
+                                    writeInfo(); 
+                                    ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH + addX, -1 + addY, newWindowWidth, barHeight + addH);
+                               }
+                    else if STREQUAL(text->IText, MSETDTM)
                     {
                         executeApp(PREFTIME);
                         update();
                     }
-                    else if STREQUAL(text->IText, "Sync System Time using SNTP")
+                    else if STREQUAL(text->IText, MSYNCSTUS)
                     {
                         if (fileExist("SYS:C/sntp"))
                         {
@@ -450,7 +496,7 @@ int main(int argc, char **argv)
                            SetMenuStrip(Window, amiMenu);
                         }
                     }
-                    else if STREQUAL(text->IText, "Add to User-Startup")
+                    else if STREQUAL(text->IText, MAU)
                             {
                                 if (IsAddedToUserStartup())
                                 {
@@ -467,7 +513,7 @@ int main(int argc, char **argv)
                                     SetMenuStrip(Window, amiMenu);
                                 }
                             }
-                    else if STREQUAL(text->IText, "Remove from User-Startup")
+                    else if STREQUAL(text->IText, MRU)
                             {
                                 if(IsAddedToUserStartup())
                                 {
@@ -503,38 +549,66 @@ int main(int argc, char **argv)
     return 0x00;
 }
 
-void writeInfo(char *text)
+void writeInfo(void)
 {
-    int i,ii;
-    SetAPen(RP,0x02);
-    Move(RP,0,0);
-    RectFill(RP,0,0,newWidth*RP->TxWidth,barHeight);  
-    SetAPen(RP,0x01);
-    SetBPen(RP,0x02);
+    int i,ii;     
+    struct DrawInfo *drawinfo;
+    struct TextAttr *textattr;
     
-    // write text
-    Move(RP,20, 8 + (barHeight-screen->Font->ta_YSize )/2);
-    Text(RP,text, newWidth -2);
-    
-    // for testing => indx=?;
-    // draw weather icon
-    if(!STREQUAL(displayIcon, "0"))
+    if (textattr = AllocMem(sizeof(struct TextAttr), MEMF_CLEAR)) 
     {
-        for(i=10*indx;i<10*indx+10;i++)
+        if (textattr->ta_Name = AllocMem(48, MEMF_CLEAR)) 
         {
-            for(ii=0;ii<24;ii++)
-            {
-                switch(images[i][ii])
-                {
-                    case '*': SetAPen(RP, 1); break;
-                    case '+': SetAPen(RP, 3); break;
-                    case '-': SetAPen(RP, 0); break;
-                    case ' ': SetAPen(RP, 2); break;
-                }
-                WritePixel(RP, ii, i%10 + (barHeight-screen->Font->ta_YSize )/2);
-            }
-        } 
+            drawinfo = GetScreenDrawInfo(screen);
+            screenFont = drawinfo->dri_Font;
+            strcpy(textattr->ta_Name, screenFont->tf_Message.mn_Node.ln_Name);
+            textattr->ta_YSize = screenFont->tf_YSize;
+            textattr->ta_Style = screenFont->tf_Style;
+            textattr->ta_Flags = screenFont->tf_Flags;
+        }
     }
+
+    if (screenFont = OpenDiskFont(textattr))
+    {
+        SetFont(RP, screenFont);
+        SetAPen(RP, backgroundColor);
+        Move(RP,0,0);
+        RectFill(RP,0,0, Window->Width+1, Window->Height+1);
+        SetAPen(RP, textColor);
+        SetBPen(RP, backgroundColor);
+        
+        // write text
+        Move(RP, ICONWIDTH, 8 + (barHeight-screenFont->tf_YSize)/2);
+        Text(RP, screenText, strlen(screenText));
+
+        newWindowWidth = TextLength(RP, screenText, newWidth) + 16;
+        
+        // for testing => indx=?;
+        // draw weather icon
+        if(!STREQUAL(displayIcon, "0"))
+        {
+            for(i=10*indx;i<10*indx+10;i++)
+            {
+                for(ii=0;ii<24;ii++)
+                {
+                    switch(images[i][ii])
+                    {
+                        case '*': SetAPen(RP, textColor); break;
+                        case '+': SetAPen(RP, sunColor); break;
+                        case '-': SetAPen(RP, cloudColor); break;
+                        case '=': SetAPen(RP, lcloudColor); break;
+                        case '#': SetAPen(RP, dcloudColor); break;
+                        case ' ': SetAPen(RP, backgroundColor); break;
+                    }
+                    WritePixel(RP, ii, i%10 + (barHeight-screenFont->tf_YSize )/2);
+                }
+            } 
+        }
+
+        CloseFont(screenFont);
+    }
+    FreeMem(textattr->ta_Name, 48);
+    FreeMem(textattr, sizeof(struct TextAttr));
 }
 
 void update(void)
@@ -632,6 +706,25 @@ void LoadPrefs(void)
         FGets(fp, buffer, BUFFER/8);
         addH = atoi(buffer);    // addH
 
+        FGets(fp, buffer, BUFFER/8);
+        textColor = atoi(buffer); // text color
+
+        FGets(fp, buffer, BUFFER/8);
+        backgroundColor = atoi(buffer); // background color
+
+        FGets(fp, buffer, BUFFER/8);
+        sunColor = atoi(buffer); // sun color
+
+        FGets(fp, buffer, BUFFER/8);
+        cloudColor = atoi(buffer); // cloud color
+
+        FGets(fp, buffer, BUFFER/8);
+        lcloudColor = atoi(buffer); // light cloud color
+
+        FGets(fp, buffer, BUFFER/8);
+        dcloudColor = atoi(buffer); // dark cloud color
+
+
         strcpy(tm, months);
         strcpy(td, days);
         amonths= getArray(tm, ",", 12);
@@ -647,7 +740,7 @@ void SavePrefs(void)
 	fp = Open(PREFFILEPATH, MODE_NEWFILE);
 	if (fp)
 	{
-		sprintf(fpStr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%d\n%d\n%d\n", location, unit, lang, apikey, days, months, displayIcon, displayLocation, displayDescription, displayDateTime, addX, addY, addH);
+		sprintf(fpStr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n", location, unit, lang, apikey, days, months, displayIcon, displayLocation, displayDescription, displayDateTime, addX, addY, addH, textColor, backgroundColor, sunColor, cloudColor, lcloudColor, dcloudColor);
 		FPuts(fp, fpStr);
 		Close(fp);
 	}
@@ -684,6 +777,13 @@ void createPreferencesWin(void)
         IDINTEGERADDH,
 		IDBCANCEL,
         IDBSAVEANDCLOSE,
+        IDPALETTETEXT,
+        IDPALETTEBACKGROUND,
+        IDPALETTESUN,
+        IDPALETTECLOUD,
+        IDPALETTELCLOUD,
+        IDPALETTEDCLOUD,
+        IDGETMYLOCATION,
 		// end of gadget id
 		IDLAST
 	};
@@ -719,11 +819,11 @@ void createPreferencesWin(void)
 		WA_SizeGadget, 			  TRUE,
         WA_SmartRefresh,          TRUE,
         WA_MinWidth,              512,
-        WA_MinHeight,             300,
+        WA_MinHeight,             30,
         WA_MaxWidth,              512,
         WA_MaxHeight,             -1,
         WA_InnerWidth,                 512,
-        WA_InnerHeight,                300,
+        WA_InnerHeight,                30,
         WA_Left,                  0,
         WA_Top,                   0,
         WA_SizeBRight,            FALSE,
@@ -734,26 +834,29 @@ void createPreferencesWin(void)
 												LAYOUT_SpaceOuter, TRUE,
 												LAYOUT_DeferLayout, TRUE,
 
-                                                // Text 
-            									LAYOUT_AddChild, HGroupObject,
-                                                                LAYOUT_AddChild,  LabelObject,
-                                                                                LABEL_Justification, 0,
-                                                                                LABEL_Text, "               ",
-                                                                End,
-                                                                CHILD_Label,  LabelObject,
-                                                                                LABEL_Justification, 0,
-                                                                                LABEL_Text, " Read guide [Help/Manual menu] for more details.",
-                                                                End,
+                                                LAYOUT_AddChild, SpaceObject,
+                                                                GA_ID, 98,
+                                                                SPACE_Transparent,TRUE,
+                                                                SPACE_BevelStyle, BVS_NONE,
                                                 End,
 
 												// LOCATION
-                                                LAYOUT_AddChild, co[0] = (struct Gadget *) StringObject,
+                                                LAYOUT_AddChild, HGroupObject,
+
+                                                    LAYOUT_AddChild, co[0] = (struct Gadget *) StringObject,
                                                                 GA_ID, IDSTRINGLOCATION,
                                                                 GA_RelVerify, TRUE,
                                                                 STRINGA_TextVal, location,
                                                                 STRINGA_MaxChars, 64,
                                                                 STRINGA_Justification, GACT_STRINGLEFT,
                                                                 STRINGA_HookType, SHK_CUSTOM,
+                                                    End,
+
+                                                    LAYOUT_AddChild, co[21] = ButtonObject,
+															GA_Text, "_Get My Location",
+															GA_RelVerify, TRUE,
+															GA_ID, IDGETMYLOCATION,
+                                                    End,
                                                 End,
                                                 CHILD_Label,  LabelObject,
                                                                 LABEL_Justification, 0,
@@ -905,9 +1008,9 @@ void createPreferencesWin(void)
                                                                                 GA_ID, IDINTEGERADDX,
                                                                                 GA_RelVerify, TRUE,
                                                                                 INTEGER_Number, addX,
-                                                                                INTEGER_MaxChars, 2,
-                                                                                INTEGER_Minimum, -4,
-                                                                                INTEGER_Maximum, 4,
+                                                                                INTEGER_MaxChars, 5,
+                                                                                INTEGER_Minimum, -IntuitionBase->ActiveScreen->Width,
+                                                                                INTEGER_Maximum, IntuitionBase->ActiveScreen->Width,
                                                                                 INTEGER_Arrows, TRUE,
                                                                                 STRINGA_Justification, GACT_STRINGRIGHT,
                                                 End,
@@ -921,9 +1024,9 @@ void createPreferencesWin(void)
                                                                                 GA_ID, IDINTEGERADDY,
                                                                                 GA_RelVerify, TRUE,
                                                                                 INTEGER_Number, addY,
-                                                                                INTEGER_MaxChars, 2,
-                                                                                INTEGER_Minimum, -4,
-                                                                                INTEGER_Maximum, 4,
+                                                                                INTEGER_MaxChars, 5,
+                                                                                INTEGER_Minimum, -IntuitionBase->ActiveScreen->Height,
+                                                                                INTEGER_Maximum, IntuitionBase->ActiveScreen->Height,
                                                                                 INTEGER_Arrows, TRUE,
                                                                                 STRINGA_Justification, GACT_STRINGRIGHT,
                                                 End,
@@ -938,14 +1041,104 @@ void createPreferencesWin(void)
                                                                                 GA_RelVerify, TRUE,
                                                                                 INTEGER_Number, addH,
                                                                                 INTEGER_MaxChars, 2,
-                                                                                INTEGER_Minimum, -4,
-                                                                                INTEGER_Maximum, 4,
+                                                                                INTEGER_Minimum, -8,
+                                                                                INTEGER_Maximum, 8,
                                                                                 INTEGER_Arrows, TRUE,
                                                                                 STRINGA_Justification, GACT_STRINGRIGHT,
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
                                                                 LABEL_Text, "  Add to Height ",
+                                                End,
+
+                                                // Text Color
+                                                LAYOUT_AddChild, co[15] = (struct Gadget *) PaletteObject,
+                                                                                GA_ReadOnly,                FALSE,
+                                                                                GA_ID,                      IDPALETTETEXT,
+                                                                                GA_RelVerify,               TRUE,
+                                                                                PALETTE_Colour,             textColor,
+                                                                                PALETTE_ColourOffset,       0,
+                                                                                PALETTE_NumColours,         16,
+                                                End,
+                                                CHILD_Label, LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "           Text ",
+                                                End,
+
+                                                // Background Color
+                                                LAYOUT_AddChild, co[16] = (struct Gadget *) PaletteObject,
+                                                                                GA_ReadOnly,                FALSE,
+                                                                                GA_ID,                      IDPALETTEBACKGROUND,
+                                                                                GA_RelVerify,               TRUE,
+                                                                                PALETTE_Colour,             backgroundColor,
+                                                                                PALETTE_ColourOffset,       0,
+                                                                                PALETTE_NumColours,         16,
+                                                End,
+                                                CHILD_Label, LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "     Background ",
+                                                End,
+
+                                                // Sun Color
+                                                LAYOUT_AddChild, co[17] = (struct Gadget *) PaletteObject,
+                                                                                GA_ReadOnly,                FALSE,
+                                                                                GA_ID,                      IDPALETTESUN,
+                                                                                GA_RelVerify,               TRUE,
+                                                                                PALETTE_Colour,             sunColor,
+                                                                                PALETTE_ColourOffset,       0,
+                                                                                PALETTE_NumColours,         16,
+                                                End,
+                                                CHILD_Label, LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "            Sun ",
+                                                End,
+
+                                                // Cloud Color
+                                                LAYOUT_AddChild, co[18] = (struct Gadget *) PaletteObject,
+                                                                                GA_ReadOnly,                FALSE,
+                                                                                GA_ID,                      IDPALETTECLOUD,
+                                                                                GA_RelVerify,               TRUE,
+                                                                                PALETTE_Colour,             cloudColor,
+                                                                                PALETTE_ColourOffset,       0,
+                                                                                PALETTE_NumColours,         16,
+                                                End,
+                                                CHILD_Label, LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "          Cloud ",
+                                                End,
+
+                                                // Light Cloud Color
+                                                LAYOUT_AddChild, co[19] = (struct Gadget *) PaletteObject,
+                                                                                GA_ReadOnly,                FALSE,
+                                                                                GA_ID,                      IDPALETTELCLOUD,
+                                                                                GA_RelVerify,               TRUE,
+                                                                                PALETTE_Colour,             lcloudColor,
+                                                                                PALETTE_ColourOffset,       0,
+                                                                                PALETTE_NumColours,         16,
+                                                End,
+                                                CHILD_Label, LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "    Light Cloud ",
+                                                End,
+                                                
+                                                // Dark Cloud Color
+                                                LAYOUT_AddChild, co[20] = (struct Gadget *) PaletteObject,
+                                                                                GA_ReadOnly,                FALSE,
+                                                                                GA_ID,                      IDPALETTEDCLOUD,
+                                                                                GA_RelVerify,               TRUE,
+                                                                                PALETTE_Colour,             dcloudColor,
+                                                                                PALETTE_ColourOffset,       0,
+                                                                                PALETTE_NumColours,         16,
+                                                End,
+                                                CHILD_Label, LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "     Dark Cloud ",
+                                                End,
+
+                                                LAYOUT_AddChild, SpaceObject,
+                                                                                GA_ID, 99,
+                                                                                SPACE_Transparent,TRUE,
+                                                                                SPACE_BevelStyle, BVS_NONE,
                                                 End,
 
                                                 // Buttons
@@ -957,10 +1150,11 @@ void createPreferencesWin(void)
 															GA_ID, IDBCANCEL,
                                                     End,
 
-                                                    LAYOUT_AddChild, LabelObject,
-													  LABEL_Justification, 0,
-													  LABEL_Text, "     ",
-												    End,
+                                                    LAYOUT_AddChild, SpaceObject,
+                                                            GA_ID, 97,
+                                                            SPACE_Transparent,TRUE,
+                                                            SPACE_BevelStyle, BVS_NONE,
+                                                    End,
 
 													LAYOUT_AddChild, co[14] = ButtonObject,
 															GA_Text, "_Save & Close",
@@ -989,6 +1183,7 @@ void createPreferencesWin(void)
             STRPTR vLocation, vDays, vMonths, vApikey;
             ULONG iLang, iUnit;
             char tm[64], td[64];
+            int Control, Count, x;
 
             switch (resultcreatePreferences & WMHI_CLASSMASK)
             {
@@ -1035,6 +1230,67 @@ void createPreferencesWin(void)
                             GetAttr(INTEGER_Number, co[11], &addY); 
                             GetAttr(INTEGER_Number, co[12], &addH);
 
+                            GetAttr(PALETTE_Colour, co[15], (ULONG*)&textColor);
+                            GetAttr(PALETTE_Colour, co[16], (ULONG*)&backgroundColor);
+                            GetAttr(PALETTE_Colour, co[17], (ULONG*)&sunColor);
+                            GetAttr(PALETTE_Colour, co[18], (ULONG*)&cloudColor);
+                            GetAttr(PALETTE_Colour, co[19], (ULONG*)&lcloudColor);
+                            GetAttr(PALETTE_Colour, co[20], (ULONG*)&dcloudColor);
+
+                            // Controlling usage "," for days
+                            Count = 0;
+                            for (x=0;vDays[x];x++)
+                            {
+                                if (vDays[x]==',')
+                                {
+                                   Count++;
+                                }
+
+                            }
+
+                            if (Count!=6)
+                            {
+                                EasyRequest(Window, &DayControl, NULL, NULL);
+                                break;
+                            }
+
+                            // Controlling usage "," for months
+                            Count = 0;
+                            for (x=0;vMonths[x];x++)
+                            {
+                                if (vMonths[x]==',')
+                                {
+                                   Count++;
+                                }
+
+                            }
+
+                            if (Count!=11)
+                            {
+                                EasyRequest(Window, &MonthControl, NULL, NULL);
+                                break;
+                            }
+
+
+                            // Different Color Controlling
+                            Control = (1<<textColor)|(1<<backgroundColor)|(1<<sunColor)|(1<<cloudColor)|(1<<lcloudColor)|(1<<dcloudColor);
+                            Count = 0;
+
+                            for (x=0;x<16;x++)
+                            {
+                               if ((Control>>x)&1)
+                               {
+                                  Count++;
+                               }  
+                            }
+
+
+                            if (Count!=6)
+                            {      
+                                EasyRequest(Window, &ColorControl, NULL, NULL);
+                                break;
+                            }
+
                             SavePrefs();
                             
                             strcpy(tm, months);
@@ -1053,6 +1309,58 @@ void createPreferencesWin(void)
 						
 						case IDBCANCEL:
                             donecreatePreferences = TRUE;
+                        break;
+
+
+                        case IDGETMYLOCATION:
+                            if (fileExist("SYS:C/GetExtIP"))
+                            {
+                                SetGadgetAttrs(co[21], createPreferencesWin, NULL, GA_Disabled, TRUE, TAG_DONE);
+                                executeApp(GETEXTIP);
+
+                                fp = Open("RAM:T/ip.txt", MODE_OLDFILE);
+	
+                                if (fp)
+                                {
+                                    FGets(fp, iptxt, sizeof(iptxt));
+                                    iptxt[strlen(iptxt)-1] = '\0';
+                                    Close(fp);
+                                }
+
+                                if(strlen(iptxt)>6) // ip minumum length 1.1.1.1
+                                {
+
+                                    sprintf(ipapiurl, "http://ip-api.com/csv/%s", iptxt);
+                                    httpget(ipapiurl, "RAM:T/mylocation.txt");
+
+                                    fp = Open("RAM:T/mylocation.txt", MODE_OLDFILE);
+                                    if(fp)
+                                    {
+                                        FGets(fp, locationCsv, sizeof(locationCsv));
+                                        locationCsv[strlen(locationCsv)-1] = '\0';
+                                        Close(fp);
+                                    }
+
+                                    locationData = getArray(locationCsv, ",", 14);
+
+                                    if(STREQUAL(locationData[0], "success"))
+                                    {
+                                        strcpy(locationCsv, convertTRChar(locationData[5]));
+                                        strcat(locationCsv,",");
+                                        strcat(locationCsv, locationData[2]);
+                                        SetGadgetAttrs(co[0], createPreferencesWin, NULL, STRINGA_TextVal, locationCsv, TAG_DONE);  
+                                    }
+                                }
+                                
+                                SetGadgetAttrs(co[21], createPreferencesWin, NULL, GA_Disabled, FALSE, TAG_DONE);
+                                
+
+                            }
+                            else
+                            {                         
+                               EasyRequest(Window, &GetExtIPMessage, NULL, NULL);
+                            }
+                            
                         break;
 						
                         default:

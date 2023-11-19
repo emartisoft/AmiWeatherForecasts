@@ -16,11 +16,17 @@
 
      It synchronizes the system time using sntp if avaliable an internet connection when executing firstly. Additionally, @{i}Tools/Set Date and Time Manually @{ui} and @{i}Sync system time using SNTP@{ui} menuitems can also be used.
 
+     It has feature that finding of your location automatically. 
+
      @{b}Disclaimer@{ub}
 
      Use your own API key by making an account on OpenWeatherMap (https://openweathermap.org/)
 
      SNTP (to sync system time) can be downloaded from aminet.net (http://aminet.net/package/comm/net/sntp)
+
+     GetExtIP can be downloaded from aminet.net (https://aminet.net/package/util/cli/GetExtIP)
+
+     It uses APIs from ip-api.com to automatically find your location.
 
      Tested on OS3.2 only. It may be work on other WB.
 
@@ -54,7 +60,7 @@
      From @{b}Settings/Preferences@{ub} menu item;
 
      @{b}LOCATION@{ub}
-     Enter the city and country code in the format below.
+     Enter the city and country code in the format below. Or you may prefer to click to @{" Get My Location " Link " "} button.
      
      'city_name,country_code'      @{" Country Codes " Link "Country Codes"}
 
@@ -109,6 +115,9 @@
 
      @{b}Height of the window@{ub}
      Calibration setting for height of the window.
+
+     @{b}Color Setting@{ub}
+     For Text, background, icon (sun, cloud)
 
 @EndNode
 
@@ -166,6 +175,12 @@
 @Toc "Main"
 
      @{fg shine}AmiWeatherForecasts History@{fg text}
+
+     @{b}1.3 (17.11.2023)@{ub}
+          - Using screen text font for GUI (Prefs/Font)
+          - Added customize color settings
+          - Changed min and max values for 'Add Pos X and Y'
+          - Added 'Get My Location' button
 
      @{b}1.2 (04.11.2023)@{ub}
           - According to SnoopDos, continuous querying of the TZ variable is blocked.
