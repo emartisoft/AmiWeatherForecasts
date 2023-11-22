@@ -208,52 +208,28 @@
 
      @{fg shine}Languages@{fg text}
 
-     af Afrikaans
-     al Albanian
-     ar Arabic
-     az Azerbaijani
-     bg Bulgarian
-     ca Catalan
-     cz Czech
-     da Danish
-     de German
-     el Greek
-     en English
-     eu Basque
-     fa Persian (Farsi)
-     fi Finnish
-     fr French
-     gl Galician
-     he Hebrew
-     hi Hindi
-     hr Croatian
-     hu Hungarian
-     id Indonesian
-     it Italian
-     ja Japanese
-     kr Korean
-     la Latvian
-     lt Lithuanian
-     mk Macedonian
-     no Norwegian
-     nl Dutch
-     pl Polish
-     pt Portuguese
-     pt_br Portugues Brasil
-     ro Romanian
-     ru Russian
-     sv, se	Swedish
-     sk Slovak
-     sl Slovenian
-     sp, es	Spanish
-     sr Serbian
-     th Thai
-     tr Turkish
-     ua, uk Ukrainian
-     vi Vietnamese
-     zh_cn Chinese Simplified
-     zh_tw Chinese Traditional
-     zu Zulu
+     ca:  Catalan
+     cz:  Czech
+     da:  Danish
+     de:  German
+     en:  English
+     eu:  Basque
+     fi:  Finnish
+     fr:  French
+     gl:  Galician
+     it:  Italian
+     la:  Latvian
+     lt:  Lithuanian
+     no:  Norwegian
+     nl:  Dutch
+     pl:  Polish
+     pt:  Portuguese
+     ro:  Romanian
+     sv:  Swedish
+     sk:  Slovak
+     sl:  Slovenian
+     sp:  Spanish
+     tr:  Turkish
 
 @EndNode
 
