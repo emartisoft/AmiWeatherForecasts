@@ -51,6 +51,9 @@ application is executed or not.
 1.0 Feb 2022
 - First but not published.
 
+![titlebar1](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/encoding1.png?raw=true)
+
+![titlebar2](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/encoding2.png?raw=true)
 
 ![main](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/wb.png?raw=true)
 
