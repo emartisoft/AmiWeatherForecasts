@@ -138,7 +138,7 @@ ULONG getIndexChooser(STRPTR val);
 
 #define MABOUT              "About" 
 #define MQUIT               "Quit"
-#define MUPDATEWF           "Update Weahter Forecast"           
+#define MUPDATEWF           "Update Weather Forecast"           
 #define MSETDTM             "Set Date and Time Manually"
 #define MSYNCSTUS           "Sync System Time using SNTP"
 #define MPREF               "Preferences"
