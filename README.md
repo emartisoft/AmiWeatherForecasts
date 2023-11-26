@@ -22,6 +22,16 @@ License: MIT
 
 Version History
 ===============
+1.4 (26.11.2023)
+- Encoding problem is solved
+- Some languages removed
+- Fixed any icons can be moved via drag and drop on WB
+- Get Days and Months from locale
+- Added use or not abbreviations for days and months
+- Fixed the issue of color changes using system palette
+- Removed calibration setting for height of the window
+- Added 'Add to Pos Y of Text' button
+  
 1.3 (17.11.2023)
 - Using screen text font for GUI (Prefs/Font)
 - Added customize color settings
@@ -55,12 +65,14 @@ application is executed or not.
 
 ![titlebar2](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/encoding2.png?raw=true)
 
+![titlebar3](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/main-tr1.4.png?raw=true)
+
 ![main](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/wb.png?raw=true)
+
+![preferences](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/pref1.4.png?raw=true)
 
 ![afterExt](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/afterExt.png?raw=true)
 
 ![setup1](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/setup1.png?raw=true)
 
 ![setup2](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/setup2.png?raw=true)
-
-![preferences](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/preferences1.3.png?raw=true)
