@@ -2,6 +2,7 @@
 
 AmiWeatherForecasts by emarti, Murat Ozdemir 
 
+v1.4 Nov 2023
 V1.3 Nov 2023
 V1.2 Nov 2023
 V1.1 Oct 2023
@@ -19,12 +20,16 @@ V1.0 Feb 2022 (not published)
 #define USERSTARTUP "SYS:S/User-Startup"
 #define COPIEDUSERSTARTUP "RAM:T/User-Startup"
 
+BPTR fp;
+char fpStr[BUFFER/2];
+
 char location[BUFFER/8];
 char unit[10];
-char lang[5];
+char lang[16];
+char slang[16];
 char apikey[BUFFER/16];
-char days[BUFFER/16];
-char months[BUFFER/16];
+char days[BUFFER];
+char months[BUFFER];
 char displayIcon[2];
 char displayLocation[2];
 char displayDescription[2];
@@ -85,10 +90,16 @@ int refresh;
 void writeInfo(void);
 void update(void);
 void beforeClosing(void);
+void changeWindowSizeAndPosition(void);
 
 char appPath[PATH_MAX+NAME_MAX];
 char curPath[PATH_MAX];
 char manualPath[PATH_MAX+NAME_MAX];
+
+#define PREFPPALETTE    "SYS:Prefs/Env-Archive/Sys/Palette.prefs"
+BOOL getColorsFromWBPalette(void);
+UWORD colormap[8];
+#define COLORCOUNT      8
 
 #define PREFFILEPATH	"SYS:Prefs/Env-Archive/AmiWeatherForecasts.prefs"
 void SavePrefs(void);
@@ -108,31 +119,26 @@ char locationCsv[BUFFER/2];
 char ipapiurl[64];
 char **locationData;
 
-#define CLANGCOUNT  22
+#define CLANGCOUNT  15
 STRPTR clanguages[] = {
-        "ca",// Catalan
-        "cz",// Czech
-        "da",// Danish
-        "de",// German
-        "en",// English
-        "eu",// Basque
-        "fi",// Finnish
-        "fr",// French
-        "gl",// Galician
-        "it",// Italian
-        "la",// Latvian
-        "lt",// Lithuanian
-        "no",// Norwegian
-        "nl",// Dutch
-        "pl",// Polish
-        "pt",// Portuguese
-        "ro",// Romanian
-        "sv",// se",//	Swedish
-        "sk",// Slovak
-        "sl",// Slovenian
-        "sp",// es",//	Spanish
-        "tr",// Turkish
-        NULL};
+        "ca, Catalan",
+        "da, Danish",
+        "de, German",
+        "en, English",
+        "eu, Basque",
+        "fi, Finnish",
+        "fr, French",
+        "gl, Galician",
+        "it, Italian",
+        "no, Norwegian",
+        "nl, Dutch",
+        "pt, Portuguese",
+        "sv, Swedish",
+        "sp, Spanish",
+        "tr, Turkish",
+        NULL};    
+
+struct Locale *currentLocale;
 
 ULONG getIndexChooser(STRPTR val);
 
@@ -279,7 +285,9 @@ void loadDefaults(void)
 {
     strcpy(location, "istanbul,tr");
     strcpy(unit,"metric");
-    strcpy(lang,"en");
+    strcpy(lang,"en, English");
+    strcpy(slang, lang);
+    slang[2]='\0';
     strcpy(apikey,"e45eeea40d4a9754ef176588dd068f18");
     strcpy(months,"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec");
     strcpy(days,"Sun,Mon,Tue,Wed,Thu,Fri,Sat");
@@ -290,8 +298,8 @@ void loadDefaults(void)
     addX = addY = addH = 0;
     textColor = 1;
     backgroundColor = 2;
-    sunColor = 11;
-    cloudColor = 15;
+    sunColor = 7;
+    cloudColor = 0;
     lcloudColor = 5;
     dcloudColor = 4;
     
@@ -317,6 +325,59 @@ void prepareAndWriteInfo(void)
     if(!STREQUAL(displayDateTime, "0")) { strcat(screenText, strdatetime);}
 
     newWidth = 2 + strlen(screenText);
+}
+
+BOOL getColorsFromWBPalette()
+{
+    UWORD r,g,b,indx;
+    int i;
+    FILE *fp;
+    long offset;
+
+    offset = 0xb2; 
+
+    // index   R     G     B
+    // -----   -----------------
+    // 00 00   12 88 67 54 93 fe  (total 8 bytes info for Color0)
+    // 00 01   ....
+    //
+    // R=12 -> 1
+    // G=67 -> 6
+    // B=93 -> 9
+    //
+    // rgb4 color -> 0x0169
+    
+    if((fp = fopen(PREFPPALETTE, "r")) == NULL) 
+    {
+        Printf("Palette.prefs file not found\n");
+        return FALSE;
+	}
+    else
+    {
+        fseek(fp, offset, SEEK_SET);
+        for (i = 0; i < COLORCOUNT; i++)
+        {
+            fread(&indx, sizeof(UWORD), 1, fp);
+            //printf("%04lx: %04lx\n", offset, indx);
+            fread(&r, sizeof(UWORD), 1, fp);
+            //printf("%04lx: %04lx\n", offset, r);
+            fread(&g, sizeof(UWORD), 1, fp);
+            //printf("%04lx: %04lx\n", offset, g);
+            fread(&b, sizeof(UWORD), 1, fp);
+            //printf("%04lx: %04lx\n", offset, b);
+            offset +=8;
+
+            colormap[i]= ((r>>12)<<8)|((g>>12)<<4)|(b>>12);
+            // printf("color[%d]=%04lx\n", i, colormap[i]);
+        }
+        fclose(fp);
+    }
+    return TRUE;
+}
+
+void changeWindowSizeAndPosition()
+{
+    ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH + addX, 1 + addY, newWindowWidth, barHeight);
 }
 
 int main(int argc, char **argv)
@@ -373,14 +434,17 @@ int main(int argc, char **argv)
         return SORRY;
     }
  
+    currentLocale = OpenLocale(NULL);
+
     RP=(struct RastPort*)Window->RPort;
 
     // get weather URL
-    strcpy(weatherURL, getURL(apikey, location, unit, lang));
+    strcpy(weatherURL, getURL(apikey, convertToUTF8(location), unit, slang));
+
     // get weather info
     update();
 
-    barHeight = screen->BarHeight+1;
+    barHeight = screen->BarHeight-1;
 
     VisualInfoPtr = GetVisualInfo(screen, NULL);
 
@@ -395,6 +459,7 @@ int main(int argc, char **argv)
 
     prepareAndWriteInfo();
     machineGun=0;
+    changeWindowSizeAndPosition();
 
     while(loop)
     {
@@ -408,9 +473,12 @@ int main(int argc, char **argv)
             writeInfo();
         }
 
-        if(machineGun<2) writeInfo();
+        if(machineGun<0x08)
+        {
+            writeInfo();
+            changeWindowSizeAndPosition();
+        }
         machineGun++;
-        ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH + addX, -1 + addY, newWindowWidth, barHeight + addH);
          
         while ((msg = (struct IntuiMessage*)GetMsg( Window->UserPort)))
         {
@@ -447,12 +515,12 @@ int main(int argc, char **argv)
                     else if STREQUAL(text->IText, MMANUAL) 
                                 executeApp(manualPath);
                     else if STREQUAL(text->IText, MPREF) 
-                               { 
-                                    createPreferencesWin();
-                                    prepareAndWriteInfo();
-                                    writeInfo(); 
-                                    ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH + addX, -1 + addY, newWindowWidth, barHeight + addH);
-                               }
+                    { 
+                        createPreferencesWin();
+                        prepareAndWriteInfo();
+                        writeInfo(); 
+                        changeWindowSizeAndPosition();
+                    }
                     else if STREQUAL(text->IText, MSETDTM)
                     {
                         executeApp(PREFTIME);
@@ -530,7 +598,12 @@ void writeInfo(void)
     int i,ii;     
     struct DrawInfo *drawinfo;
     struct TextAttr *textattr;
-    
+    struct ViewPort *vp;
+
+    getColorsFromWBPalette();
+    vp = (struct ViewPort*) ViewPortAddress(Window);
+    LoadRGB4(vp, colormap, 8);
+
     if (textattr = AllocMem(sizeof(struct TextAttr), MEMF_CLEAR)) 
     {
         if (textattr->ta_Name = AllocMem(48, MEMF_CLEAR)) 
@@ -549,15 +622,15 @@ void writeInfo(void)
         SetFont(RP, screenFont);
         SetAPen(RP, backgroundColor);
         Move(RP,0,0);
-        RectFill(RP,0,0, Window->Width+1, Window->Height+1);
+        RectFill(RP,0,0, Window->Width+2, Window->Height+2);
         SetAPen(RP, textColor);
         SetBPen(RP, backgroundColor);
         
         // write text
-        Move(RP, ICONWIDTH, 8 + (barHeight-screenFont->tf_YSize)/2);
+        Move(RP, ICONWIDTH, 6 + addH + (barHeight-screenFont->tf_YSize)/2);
         Text(RP, screenText, strlen(screenText));
 
-        newWindowWidth = TextLength(RP, screenText, newWidth) + 16;
+        newWindowWidth = TextLength(RP, screenText, newWidth) + 24;
         
         // for testing => indx=?;
         // draw weather icon
@@ -591,8 +664,7 @@ void update(void)
 {
     httpget(weatherURL, wf);
     
-    strcpy(weatherText, getWeatherData(wf));  
-    //strcpy(weatherText, convertTRChar(weatherText));     
+    strcpy(weatherText, getWeatherData(wf));      
     strcpy(weatherText, convertToLatin(weatherText));     
     
     wdata = getArray(weatherText, "|", 4);
@@ -613,6 +685,7 @@ void beforeClosing()
     UnlockPubScreen(NULL, screen);
     ClearMenuStrip(Window);
     FreeVisualInfo(VisualInfoPtr);
+    CloseLocale(currentLocale);
     CloseWindow(Window);
     CloseLibrary(IntuitionBase);
     CloseLibrary(GfxBase);
@@ -622,13 +695,10 @@ void beforeClosing()
 /*
 ### SYS:Prefs/Env-Archive/AmiWeatherForecasts.prefs ###
 */
-BPTR fp;
-char fpStr[BUFFER/2];
-
 // load settings from pref file
 void LoadPrefs(void)
 {
-    char tm[64], td[64];
+    char tm[BUFFER], td[BUFFER];
 	fp = Open(PREFFILEPATH, MODE_OLDFILE);
 	if (fp)
 	{
@@ -645,6 +715,8 @@ void LoadPrefs(void)
         FGets(fp, buffer, BUFFER/8);
         sprintf(lang, "%s", buffer);
         lang[strlen(lang)-1] = '\0';    // lang
+        strcpy(slang, lang);
+        slang[2]='\0';
 
         FGets(fp, buffer, BUFFER/8);
         sprintf(apikey, "%s", buffer);
@@ -761,6 +833,10 @@ void createPreferencesWin(void)
         IDPALETTELCLOUD,
         IDPALETTEDCLOUD,
         IDGETMYLOCATION,
+        IDGETMYDAYS,
+        IDGETMYMONTHS,
+        IDCHECKBOXDAYS,
+        IDCHECKBOXMONTHS,
 		// end of gadget id
 		IDLAST
 	};
@@ -773,7 +849,9 @@ void createPreferencesWin(void)
 	signed char donecreatePreferences;
 	UWORD codecreatePreferences;
 
-    ULONG dIcon, dDescription, dLocation, dDatetime;
+    ULONG dIcon, dDescription, dLocation, dDatetime, dAbbDays=TRUE, dAbbMonths=TRUE;
+
+    int localDays=0, localMonths=0;
 	
 	struct List *chooserUnit;
 	chooserUnit = ChooserLabels( "metric","imperial", NULL );
@@ -837,7 +915,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label,  LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "      Location ",
+                                                                LABEL_Text, "           Location ",
                                                 End,
 
                                                 // UNIT
@@ -852,7 +930,7 @@ void createPreferencesWin(void)
                                                 End,                                                
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "          Unit ",
+                                                                LABEL_Text, "               Unit ",
                                                 End,
 
                                                 // LANGUAGE
@@ -868,7 +946,7 @@ void createPreferencesWin(void)
                                                 
                                                 CHILD_Label,  LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "      Language ",
+                                                                LABEL_Text, "           Language ",
                                                 End,
 
                                                 // DAYS
@@ -876,14 +954,14 @@ void createPreferencesWin(void)
                                                                 GA_ID, IDSTRINGDAYS,
                                                                 GA_RelVerify, TRUE,
                                                                 STRINGA_TextVal, days,
-                                                                STRINGA_MaxChars, 32,
+                                                                STRINGA_MaxChars, 255,
                                                                 STRINGA_Justification, GACT_STRINGLEFT,
                                                                 STRINGA_HookType, SHK_CUSTOM,
                                                 End,
                                                 
                                                 CHILD_Label,  LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "          Days ",
+                                                                LABEL_Text, "               Days ",
                                                 End,
 
                                                 // MONTHS
@@ -891,14 +969,62 @@ void createPreferencesWin(void)
                                                                 GA_ID, IDSTRINGMONTHS,
                                                                 GA_RelVerify, TRUE,
                                                                 STRINGA_TextVal, months,
-                                                                STRINGA_MaxChars, 64,
+                                                                STRINGA_MaxChars, 255,
                                                                 STRINGA_Justification, GACT_STRINGLEFT,
                                                                 STRINGA_HookType, SHK_CUSTOM,
                                                 End,
                                                 
                                                 CHILD_Label,  LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "        Months ",
+                                                                LABEL_Text, "             Months ",
+                                                End,
+
+                                                // Get days and months
+                                                LAYOUT_AddChild, HGroupObject,
+                                                    LAYOUT_AddChild, co[22] = ButtonObject,
+															GA_Text, "Get _Days",
+															GA_RelVerify, TRUE,
+															GA_ID, IDGETMYDAYS,
+                                                    End,
+
+                                                LAYOUT_AddChild, co[24] = (struct Gadget *) CheckBoxObject,
+                                                                                GA_ID, IDCHECKBOXDAYS,
+                                                                                GA_RelVerify, TRUE,
+                                                                                GA_Selected, TRUE,
+                                                                                GA_Text, "Use long abbreviations for days     ",
+                                                                                CHECKBOX_TextPen, 1,
+                                                                                CHECKBOX_FillTextPen, 1,
+                                                                                CHECKBOX_BackgroundPen, 0,
+                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                End,
+
+                                                End,
+                                                CHILD_Label,  LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "                    ",
+                                                End,
+                                                LAYOUT_AddChild, HGroupObject,
+                                                    LAYOUT_AddChild, co[23] = ButtonObject,
+															GA_Text, "Get _Months",
+															GA_RelVerify, TRUE,
+															GA_ID, IDGETMYMONTHS,
+                                                    End,
+
+                                                    LAYOUT_AddChild, co[25] = (struct Gadget *) CheckBoxObject,
+                                                                                GA_ID, IDCHECKBOXMONTHS,
+                                                                                GA_RelVerify, TRUE,
+                                                                                GA_Selected, TRUE,
+                                                                                GA_Text, "Use months of the year abbreviations",
+                                                                                CHECKBOX_TextPen, 1,
+                                                                                CHECKBOX_FillTextPen, 1,
+                                                                                CHECKBOX_BackgroundPen, 0,
+                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                End,
+
+                                                End,
+                                                CHILD_Label,  LabelObject,
+                                                                LABEL_Justification, 0,
+                                                                LABEL_Text, "                    ",
                                                 End,
 
                                                 // APIKEY
@@ -913,7 +1039,7 @@ void createPreferencesWin(void)
                                                 
                                                 CHILD_Label,  LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "        APIKEY ",
+                                                                LABEL_Text, "             APIKEY ",
                                                 End,
 
                                                 // Displays icon
@@ -929,7 +1055,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label,  LabelObject,
                                                             LABEL_Justification, 0,
-                                                            LABEL_Text, "               ",
+                                                            LABEL_Text, "                    ",
                                                 End,
 
                                                 // Displays location
@@ -945,7 +1071,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label,  LabelObject,
                                                             LABEL_Justification, 0,
-                                                            LABEL_Text, "               ",
+                                                            LABEL_Text, "                    ",
                                                 End,
                                                         
                                                 // Displays description
@@ -961,7 +1087,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label,  LabelObject,
                                                             LABEL_Justification, 0,
-                                                            LABEL_Text, "               ",
+                                                            LABEL_Text, "                    ",
                                                 End,
 
                                                 // Displays date & time
@@ -977,7 +1103,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label,  LabelObject,
                                                             LABEL_Justification, 0,
-                                                            LABEL_Text, "               ",
+                                                            LABEL_Text, "                    ",
                                                 End,
 
                                                 // Add to pos X
@@ -993,7 +1119,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "  Add to Pos X ",
+                                                                LABEL_Text, "       Add to Pos X ",
                                                 End,
 
                                                 // Add to pos Y
@@ -1009,7 +1135,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "  Add to Pos Y ",
+                                                                LABEL_Text, "        Add to Pos Y ",
                                                 End,
 
 												// Add to Height
@@ -1025,7 +1151,7 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "  Add to Height ",
+                                                                LABEL_Text, "Add to Pos Y of Text ",
                                                 End,
 
                                                 // Text Color
@@ -1035,11 +1161,11 @@ void createPreferencesWin(void)
                                                                                 GA_RelVerify,               TRUE,
                                                                                 PALETTE_Colour,             textColor,
                                                                                 PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         16,
+                                                                                PALETTE_NumColours,         COLORCOUNT,
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "           Text ",
+                                                                LABEL_Text, "                Text ",
                                                 End,
 
                                                 // Background Color
@@ -1049,11 +1175,11 @@ void createPreferencesWin(void)
                                                                                 GA_RelVerify,               TRUE,
                                                                                 PALETTE_Colour,             backgroundColor,
                                                                                 PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         16,
+                                                                                PALETTE_NumColours,         COLORCOUNT,
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "     Background ",
+                                                                LABEL_Text, "          Background ",
                                                 End,
 
                                                 // Sun Color
@@ -1063,11 +1189,11 @@ void createPreferencesWin(void)
                                                                                 GA_RelVerify,               TRUE,
                                                                                 PALETTE_Colour,             sunColor,
                                                                                 PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         16,
+                                                                                PALETTE_NumColours,         COLORCOUNT,
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "            Sun ",
+                                                                LABEL_Text, "                 Sun ",
                                                 End,
 
                                                 // Cloud Color
@@ -1077,11 +1203,11 @@ void createPreferencesWin(void)
                                                                                 GA_RelVerify,               TRUE,
                                                                                 PALETTE_Colour,             cloudColor,
                                                                                 PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         16,
+                                                                                PALETTE_NumColours,         COLORCOUNT,
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "          Cloud ",
+                                                                LABEL_Text, "               Cloud ",
                                                 End,
 
                                                 // Light Cloud Color
@@ -1091,11 +1217,11 @@ void createPreferencesWin(void)
                                                                                 GA_RelVerify,               TRUE,
                                                                                 PALETTE_Colour,             lcloudColor,
                                                                                 PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         16,
+                                                                                PALETTE_NumColours,         COLORCOUNT,
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "    Light Cloud ",
+                                                                LABEL_Text, "         Light Cloud ",
                                                 End,
                                                 
                                                 // Dark Cloud Color
@@ -1105,11 +1231,11 @@ void createPreferencesWin(void)
                                                                                 GA_RelVerify,               TRUE,
                                                                                 PALETTE_Colour,             dcloudColor,
                                                                                 PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         16,
+                                                                                PALETTE_NumColours,         COLORCOUNT,
                                                 End,
                                                 CHILD_Label, LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "     Dark Cloud ",
+                                                                LABEL_Text, "          Dark Cloud ",
                                                 End,
 
                                                 LAYOUT_AddChild, SpaceObject,
@@ -1159,7 +1285,7 @@ void createPreferencesWin(void)
         {   
             STRPTR vLocation, vDays, vMonths, vApikey;
             ULONG iLang, iUnit;
-            char tm[64], td[64];
+            char tm[BUFFER], td[BUFFER];
             int Control, Count, x;
 
             switch (resultcreatePreferences & WMHI_CLASSMASK)
@@ -1181,6 +1307,8 @@ void createPreferencesWin(void)
 
                             GetAttr(CHOOSER_Selected, co[2], (ULONG*)&iLang);
                             sprintf(lang, "%s", clanguages[iLang]);
+                            strcpy(slang, lang);
+                            slang[2]='\0';
 					        
                             GetAttr(STRINGA_TextVal, co[3], (ULONG*)&vDays);
                             sprintf(days, "%s", vDays);
@@ -1253,7 +1381,7 @@ void createPreferencesWin(void)
                             Control = (1<<textColor)|(1<<backgroundColor)|(1<<sunColor)|(1<<cloudColor)|(1<<lcloudColor)|(1<<dcloudColor);
                             Count = 0;
 
-                            for (x=0;x<16;x++)
+                            for (x=0;x<COLORCOUNT;x++)
                             {
                                if ((Control>>x)&1)
                                {
@@ -1277,7 +1405,7 @@ void createPreferencesWin(void)
                             adays = getArray(td, ",", 7);
 
                             // get weather URL
-                            strcpy(weatherURL, getURL(apikey, location, unit, lang));
+                            strcpy(weatherURL, getURL(apikey, convertToUTF8(location), unit, slang));
                             update();
 
                             donecreatePreferences = TRUE;
@@ -1288,7 +1416,31 @@ void createPreferencesWin(void)
                             donecreatePreferences = TRUE;
                         break;
 
+                        case IDGETMYDAYS:
+                            GetAttr(GA_Selected, co[24], &dAbbDays);
+                            localDays=(dAbbDays)?0:7;
 
+                            strcpy(td, "");
+                            for(x=8-localDays;x<15-localDays;x++)
+                            {
+                                strcat(td, GetLocaleStr(currentLocale, x));
+                                if(x!=14-localDays) strcat(td, ",");
+                            }
+                            SetGadgetAttrs(co[3], createPreferencesWin, NULL, STRINGA_TextVal, td, TAG_DONE); 
+                        break;
+
+                        case IDGETMYMONTHS:
+                            GetAttr(GA_Selected, co[25], &dAbbMonths);
+                            localMonths=(dAbbMonths)?0:12;
+                            strcpy(tm, "");
+                            for(x=27-localMonths;x<39-localMonths;x++)
+                            {
+                                strcat(tm, GetLocaleStr(currentLocale, x));
+                                if(x!=38-localMonths) strcat(tm, ",");
+                            }
+                            SetGadgetAttrs(co[4], createPreferencesWin, NULL, STRINGA_TextVal, tm, TAG_DONE); 
+                        break;
+                    
                         case IDGETMYLOCATION:
                             if (fileExist("SYS:C/GetExtIP"))
                             {
@@ -1322,7 +1474,6 @@ void createPreferencesWin(void)
 
                                     if(STREQUAL(locationData[0], "success"))
                                     {
-                                        //strcpy(locationCsv, convertTRChar(locationData[5]));
                                         strcpy(locationCsv, convertToLatin(locationData[5]));
                                         strcat(locationCsv,",");
                                         strcat(locationCsv, locationData[2]);
@@ -1410,7 +1561,7 @@ void RemoveLineFromUserStartup(void)
     }
 
 
-        if (fileExist(COPIEDUSERSTARTUP))
+    if (fileExist(COPIEDUSERSTARTUP))
     {
         Execute("delete "COPIEDUSERSTARTUP" >NIL:",NULL,NULL);
     }

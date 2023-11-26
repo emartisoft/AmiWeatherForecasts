@@ -37,6 +37,9 @@
 
 #include <workbench/workbench.h>
 #include <proto/dos.h>
+#include <proto/locale.h>
+#include <graphics/gfxbase.h>
+#include <proto/graphics.h>
 
 #define SORRY           0xFF 
 #define WAITONESECOND   0x32
