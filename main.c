@@ -471,6 +471,7 @@ int main(int argc, char **argv)
             first=FALSE;
             prepareAndWriteInfo();
             writeInfo();
+	    changeWindowSizeAndPosition();
         }
 
         if(machineGun<0x08)
