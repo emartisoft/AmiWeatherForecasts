@@ -7,6 +7,8 @@ This app provides weather forecast and time information on the
 right side of the title bar. The display of this information 
 can be customized.
 
+![full](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/awf-pref.gif?raw=true)
+
 Weather forecast information is updated every 15 minutes. 
 If you don't want to wait, use the Tool/Update menu to update 
 immediately.
@@ -20,8 +22,16 @@ Tested on OS3.2 only. It may be work on other WB.
 
 License: MIT
 
+![full](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/main2.png?raw=true)
+
 Version History
 ===============
+1.5 (10.12.2023)
+- Added bar, digital and iconic styles
+- Added select the window and drag to the new position for all styles
+- Added environment variables (CurrentTemperature, Location and WeatherDescription) for other applications to use
+- The application interface has been made more understandable using tabs
+  
 1.4 (26.11.2023)
 - Encoding problem is solved
 - Some languages removed
@@ -61,18 +71,4 @@ application is executed or not.
 1.0 Feb 2022
 - First but not published.
 
-![titlebar1](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/encoding1.png?raw=true)
 
-![titlebar2](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/encoding2.png?raw=true)
-
-![titlebar3](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/main-tr1.4.png?raw=true)
-
-![main](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/wb.png?raw=true)
-
-![preferences](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/pref1.4.png?raw=true)
-
-![afterExt](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/afterExt.png?raw=true)
-
-![setup1](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/setup1.png?raw=true)
-
-![setup2](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/setup2.png?raw=true)
