@@ -1,13 +1,12 @@
 /* 
-
 AmiWeatherForecasts by emarti, Murat Ozdemir 
 
+v1.5 Dec 2023
 v1.4 Nov 2023
 V1.3 Nov 2023
 V1.2 Nov 2023
 V1.1 Oct 2023
 V1.0 Feb 2022 (not published)
-
 */
 
 #include "includes.h"
@@ -16,6 +15,7 @@ V1.0 Feb 2022 (not published)
 #include <funcs.h>
 #include "version.h"
 #include "images.h"
+#include "digital.h"
 
 #define USERSTARTUP "SYS:S/User-Startup"
 #define COPIEDUSERSTARTUP "RAM:T/User-Startup"
@@ -34,9 +34,10 @@ char displayIcon[2];
 char displayLocation[2];
 char displayDescription[2];
 char displayDateTime[2];
-int addX, addY, addH;
-ULONG textColor, backgroundColor;
+int addX, addY, addTextY;
+ULONG textColor, backgroundColor, style;
 ULONG sunColor, cloudColor, lcloudColor, dcloudColor;
+ULONG styleColor, shadowColor;
 
 char **amonths;
 char **adays;
@@ -56,16 +57,28 @@ struct NewWindow NewWindow =
     1, 0x0A,
     0,1,
     IDCMP_VANILLAKEY|
-    IDCMP_MENUPICK,
+    IDCMP_MENUPICK|
+    IDCMP_MOUSEMOVE|
+    IDCMP_MOUSEBUTTONS,
     WFLG_BORDERLESS|
     WFLG_NEWLOOKMENUS|
-    WFLG_WBENCHWINDOW,
+    WFLG_WBENCHWINDOW|WFLG_ACTIVATE|WFLG_REPORTMOUSE,
     NULL,NULL,NULL,NULL,NULL,
     0,0,0,0,
     WBENCHSCREEN
 };
 
 struct TextFont *screenFont;
+struct DrawInfo *drawinfo;
+struct TextAttr *textattr;
+BOOL dragging;
+
+enum 
+{
+    BAR=0,
+    ICONIC,
+    DIGITAL
+};
 
 time_t t;
 BOOL first;
@@ -98,8 +111,8 @@ char manualPath[PATH_MAX+NAME_MAX];
 
 #define PREFPPALETTE    "SYS:Prefs/Env-Archive/Sys/Palette.prefs"
 BOOL getColorsFromWBPalette(void);
-UWORD colormap[8];
 #define COLORCOUNT      8
+UWORD colormap[COLORCOUNT];
 
 #define PREFFILEPATH	"SYS:Prefs/Env-Archive/AmiWeatherForecasts.prefs"
 void SavePrefs(void);
@@ -112,7 +125,10 @@ void RemoveLineFromUserStartup(void);
 
 #define PREFTIME    "SYS:Prefs/Time"
 #define SNTP        "SYS:C/sntp pool.ntp.org >NIL:"
-#define GETEXTIP    "SYS:C/GetExtIP > RAM:T/ip.txt"
+#define IPTXT       "RAM:T/ip.txt"
+#define GETEXTIP    "SYS:C/GetExtIP"
+#define GETEXTIPRUN GETEXTIP" > "IPTXT
+#define MYLOCTXT    "RAM:T/mylocation.txt"
 
 char iptxt[15];
 char locationCsv[BUFFER/2];
@@ -138,41 +154,47 @@ STRPTR clanguages[] = {
         "tr, Turkish",
         NULL};    
 
+STRPTR styles[] = {
+    "Bar", "Iconic", "Digital", NULL
+};
+
 struct Locale *currentLocale;
+
+void exportToEnv(STRPTR val, STRPTR var);
 
 ULONG getIndexChooser(STRPTR val);
 
 #define MABOUT              "About" 
 #define MQUIT               "Quit"
-#define MUPDATEWF           "Update Weather Forecast"           
+#define MUPDATEWF           "Update Weather Forecast"
 #define MSETDTM             "Set Date and Time Manually"
 #define MSYNCSTUS           "Sync System Time using SNTP"
 #define MPREF               "Preferences"
 #define MAU                 "Add to User-Startup"
 #define MRU                 "Remove from User-Startup"
-#define MMANUAL             "Manual"                      
+#define MMANUAL             "Manual"
 
 struct NewMenu amiMenuNewMenu[] =
 {
-    NM_TITLE, (STRPTR)"AmiWeatherForecasts"         ,  NULL , 0, NULL, (APTR)~0,
+    NM_TITLE, (STRPTR)"AmiWeatherForecasts",  NULL , 0, NULL, (APTR)~0,
     NM_ITEM , (STRPTR)MABOUT               		    ,  "A" , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                          	,  NULL , 0, 0L, (APTR)~0,
     NM_ITEM , (STRPTR)MQUIT                      	,  "Q" , 0, 0L, (APTR)~0,
 	
-    NM_TITLE, (STRPTR)"Tools"              		    ,  NULL , 0, NULL, (APTR)~0,
+    NM_TITLE, (STRPTR)"Tools"     	       ,  NULL , 0, NULL, (APTR)~0,
 	NM_ITEM , (STRPTR)MUPDATEWF                     ,  "U" , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                          	,  NULL , 0, 0L, (APTR)~0,
 	NM_ITEM , (STRPTR)MSETDTM                       ,  NULL , 0, 0L, (APTR)~0,
     NM_ITEM , (STRPTR)MSYNCSTUS                     ,  NULL , 0, 0L, (APTR)~0,
 
-    NM_TITLE, (STRPTR)"Settings"                    ,  NULL , 0, NULL, (APTR)~0,
+    NM_TITLE, (STRPTR)"Settings"           ,  NULL , 0, NULL, (APTR)~0,
     NM_ITEM , (STRPTR)MPREF                         ,  "P" , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                          	,  NULL , 0, 0L, (APTR)~0,
     NM_ITEM , (STRPTR)MAU                           ,  NULL , 0, 0L, (APTR)~0,
     NM_ITEM , NM_BARLABEL                           ,  NULL , 0, 0L, (APTR)~0,
     NM_ITEM , (STRPTR)MRU                           ,  NULL , 0, 0L, (APTR)~0,
     
-    NM_TITLE, (STRPTR)"Help"                        ,  NULL , 0, NULL, (APTR)~0,
+    NM_TITLE, (STRPTR)"Help"               ,  NULL , 0, NULL, (APTR)~0,
     NM_ITEM , (STRPTR)MMANUAL                       ,  "M" , 0, 0L, (APTR)~0,
 	
     NM_END  , NULL                                  ,  NULL , 0, 0L, (APTR)~0
@@ -295,13 +317,16 @@ void loadDefaults(void)
     strcpy(displayLocation,"1");
     strcpy(displayDescription,"1");
     strcpy(displayDateTime,"1");
-    addX = addY = addH = 0;
+    addX = addY = addTextY = 0;
     textColor = 1;
     backgroundColor = 2;
     sunColor = 7;
     cloudColor = 0;
     lcloudColor = 5;
     dcloudColor = 4;
+    style = 0;
+    styleColor=3;
+    shadowColor=6;
     
 }
 
@@ -312,11 +337,23 @@ void executeApp(STRPTR path)
     SetMenuStrip(Window, amiMenu);
 }
 
+void exportToEnv(STRPTR val, STRPTR var)
+{
+    char envvar[BUFFER/4];
+    const char setenv[8] = "SetEnv ";
+    strcpy(envvar, setenv);
+    strcat(envvar, var);
+    strcat(envvar, "=");
+    strcat(envvar, val);
+    strcat(envvar, " >NIL:");
+    Execute(envvar, NULL, NULL);
+}
+
 void prepareAndWriteInfo(void)
 {
     time(&t);
     dt=localtime(&t);
-    refresh=dt->tm_sec*4;
+    refresh=dt->tm_sec*2;
     curMin=dt->tm_min;
     sprintf(strdatetime, " %s %d, %s %02d:%02d ", amonths[dt->tm_mon], dt->tm_mday, adays[dt->tm_wday], dt->tm_hour, dt->tm_min);
     sprintf(screenText, " %s ", wdata[2]);
@@ -325,6 +362,14 @@ void prepareAndWriteInfo(void)
     if(!STREQUAL(displayDateTime, "0")) { strcat(screenText, strdatetime);}
 
     newWidth = 2 + strlen(screenText);
+
+    // Export of weather data to ENV variable
+    // $currenttemperature
+    exportToEnv(wdata[2], "currenttemperature");
+    // $weatherdescription
+    exportToEnv(wdata[0], "weatherdescription");
+    // $location
+    exportToEnv(wdata[1], "location");
 }
 
 BOOL getColorsFromWBPalette()
@@ -373,11 +418,6 @@ BOOL getColorsFromWBPalette()
         fclose(fp);
     }
     return TRUE;
-}
-
-void changeWindowSizeAndPosition()
-{
-    ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH + addX, 1 + addY, newWindowWidth, barHeight);
 }
 
 int main(int argc, char **argv)
@@ -457,154 +497,6 @@ int main(int argc, char **argv)
          update();
     }
 
-    prepareAndWriteInfo();
-    machineGun=0;
-    changeWindowSizeAndPosition();
-
-    while(loop)
-    {
-        // update periodically
-        if((curMin%PERIOD4UPDATE==0)&&((refresh/4)%60==15)) update();
-
-        if ((((refresh/4)%60)==0)||first)
-        {
-            first=FALSE;
-            prepareAndWriteInfo();
-            writeInfo();
-	    changeWindowSizeAndPosition();
-        }
-
-        if(machineGun<0x08)
-        {
-            writeInfo();
-            changeWindowSizeAndPosition();
-        }
-        machineGun++;
-         
-        while ((msg = (struct IntuiMessage*)GetMsg( Window->UserPort)))
-        {
-            UWORD code = msg->Code;
-            char cmd[PATH_MAX];
-
-            switch (msg->Class)
-            {
-            case IDCMP_VANILLAKEY:
-                switch(msg->Code)
-                {
-                    case 0x1B: // press ESC to exit
-                        loop=FALSE;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-
-            case IDCMP_MENUPICK: 
-                while (code != MENUNULL) { 
-                    struct MenuItem *item = ItemAddress(amiMenu, code); 
-                    struct IntuiText *text = item->ItemFill;
-                    if STREQUAL(text->IText, MABOUT)
-                    {
-                        ClearMenuStrip(Window);
-                        EasyRequest(Window, &aboutReq, NULL, NULL);
-                        SetMenuStrip(Window, amiMenu);
-                    }
-                    else if STREQUAL(text->IText, MQUIT) 
-                                loop=FALSE;
-                    else if STREQUAL(text->IText, MUPDATEWF)
-                                update();
-                    else if STREQUAL(text->IText, MMANUAL) 
-                                executeApp(manualPath);
-                    else if STREQUAL(text->IText, MPREF) 
-                    { 
-                        createPreferencesWin();
-                        prepareAndWriteInfo();
-                        writeInfo(); 
-                        changeWindowSizeAndPosition();
-                    }
-                    else if STREQUAL(text->IText, MSETDTM)
-                    {
-                        executeApp(PREFTIME);
-                        update();
-                    }
-                    else if STREQUAL(text->IText, MSYNCSTUS)
-                    {
-                        if (fileExist("SYS:C/sntp"))
-                        {
-                           executeApp(SNTP);
-                           update();
-                        }
-                        else
-                        {
-                           ClearMenuStrip(Window);
-                           EasyRequest(Window, &SNTPMessage, NULL, NULL);
-                           SetMenuStrip(Window, amiMenu);
-                        }
-                    }
-                    else if STREQUAL(text->IText, MAU)
-                            {
-                                if (IsAddedToUserStartup())
-                                {
-                                   ClearMenuStrip(Window);
-                                   EasyRequest(Window, &addedUserStartupPreviously, NULL, NULL);
-                                   SetMenuStrip(Window, amiMenu);
-                                }
-                                else
-                                {
-                                    sprintf(cmd, "echo \"*N*NRun >NIL: %s ; %s\" >> %s >NIL:", appPath, APPNAME, USERSTARTUP);      
-                                    executeApp(cmd);
-                                    ClearMenuStrip(Window);
-                                    EasyRequest(Window, &addedUserStartup, NULL, NULL);
-                                    SetMenuStrip(Window, amiMenu);
-                                }
-                            }
-                    else if STREQUAL(text->IText, MRU)
-                            {
-                                if(IsAddedToUserStartup())
-                                {
-                                    RemoveLineFromUserStartup();
-                                    ClearMenuStrip(Window);
-                                    EasyRequest(Window, &RemoveFromUserStartup, NULL, NULL);
-                                    SetMenuStrip(Window, amiMenu);
-                                }
-                                else
-                                {
-                                    ClearMenuStrip(Window);
-                                    EasyRequest(Window, &RemoveFromUserStartupW, NULL, NULL);
-                                    SetMenuStrip(Window, amiMenu);
-                                }
-                            }
-                                
-                    code = item->NextSelect;
-                }
-                break;
-            
-            default:
-                break;
-            }
-
-            ReplyMsg(msg);
-        }
-            
-        Delay(WAITONESECOND/4);
-        refresh++;
-    }
-
-    beforeClosing();
-    return 0x00;
-}
-
-void writeInfo(void)
-{
-    int i,ii;     
-    struct DrawInfo *drawinfo;
-    struct TextAttr *textattr;
-    struct ViewPort *vp;
-
-    getColorsFromWBPalette();
-    vp = (struct ViewPort*) ViewPortAddress(Window);
-    LoadRGB4(vp, colormap, 8);
-
     if (textattr = AllocMem(sizeof(struct TextAttr), MEMF_CLEAR)) 
     {
         if (textattr->ta_Name = AllocMem(48, MEMF_CLEAR)) 
@@ -618,47 +510,369 @@ void writeInfo(void)
         }
     }
 
-    if (screenFont = OpenDiskFont(textattr))
+    screenFont = OpenDiskFont(textattr);
+
+    prepareAndWriteInfo();
+    writeInfo();
+    changeWindowSizeAndPosition();
+    first=FALSE;
+    machineGun=0;
+    dragging = FALSE;
+
+    while(loop)
     {
-        SetFont(RP, screenFont);
+        // update periodically
+        if((curMin%PERIOD4UPDATE==0)&&((refresh/2)%60==15))
+        {
+            update();                                
+        }
+
+        if ((((refresh/2)%60)==0)||first)
+        {
+            first=FALSE;
+            prepareAndWriteInfo();
+            writeInfo();
+            changeWindowSizeAndPosition();
+            Delay(WAITONESECOND);
+            
+            if (fileExist(wf))
+            {
+              Execute("SYS:C/delete RAM:T/weather.json >NIL:",NULL,NULL);
+            }
+            
+            refresh+=2;                          
+        }
+
+        if(machineGun<0x04)
+        {
+            writeInfo();
+            changeWindowSizeAndPosition();              
+        }
+        machineGun++;
+         
+        while ((msg = (struct IntuiMessage*)GetMsg( Window->UserPort)))
+        {
+            UWORD code = msg->Code;
+            char cmd[PATH_MAX];
+
+            switch (msg->Class)
+            {
+                case IDCMP_MOUSEBUTTONS:
+                    if (code == SELECTDOWN)
+                    {
+                        dragging = TRUE;
+                        Delay(20);
+                    }
+                    else if (code == SELECTUP)
+                    {
+                        dragging = FALSE;
+                        SavePrefs();
+                        machineGun=0;
+                    }
+                break;
+
+                case IDCMP_MOUSEMOVE:
+                    if (dragging)
+                    {
+                        MoveWindow(Window, msg->MouseX,  msg->MouseY);
+                        if(Window->LeftEdge<=0) 
+                            Window->LeftEdge = 0;
+                        switch (style)
+                        {
+                            case BAR:
+                                if(Window->LeftEdge>IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH) 
+                                    Window->LeftEdge = IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH;
+                                addX = Window->LeftEdge - (IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH);
+                                break;
+                            case ICONIC:
+                                if(Window->LeftEdge>IntuitionBase->ActiveScreen->Width - 4 - ICONWIDTH) 
+                                    Window->LeftEdge = IntuitionBase->ActiveScreen->Width - 4 - ICONWIDTH;
+                                addX = Window->LeftEdge - (IntuitionBase->ActiveScreen->Width - ICONWIDTH - 4);
+                                break;
+                            case DIGITAL:
+                                if(Window->LeftEdge>IntuitionBase->ActiveScreen->Width + 1 - PANELWIDTH) 
+                                    Window->LeftEdge = IntuitionBase->ActiveScreen->Width + 1 - PANELWIDTH;
+                                addX = Window->LeftEdge - (IntuitionBase->ActiveScreen->Width + 1 - PANELWIDTH);
+                                break;
+                            default:
+                                break;
+                        }
+                        if(Window->TopEdge>IntuitionBase->ActiveScreen->Height-Window->Height) 
+                            Window->TopEdge = IntuitionBase->ActiveScreen->Height-Window->Height;
+                        if(Window->TopEdge<1) 
+                            Window->TopEdge = 1;
+                        addY = Window->TopEdge - 1;
+                        ReplyMsg(msg);
+                        continue;
+                    }
+                break;
+
+                case IDCMP_VANILLAKEY:
+                    switch(code)
+                    {
+                        case 0x1B: // press ESC to exit
+                            loop=FALSE;
+                            break;
+                        default:
+                            break;
+                    }
+                break;
+
+                case IDCMP_MENUPICK: 
+                    while (code != MENUNULL) { 
+                        struct MenuItem *item = ItemAddress(amiMenu, code); 
+                        struct IntuiText *text = item->ItemFill;
+                        if STREQUAL(text->IText, MABOUT)
+                        {
+                            ClearMenuStrip(Window);
+                            EasyRequest(Window, &aboutReq, NULL, NULL);
+                            SetMenuStrip(Window, amiMenu);
+                        }
+                        else if STREQUAL(text->IText, MQUIT) 
+                                    loop=FALSE;
+                        else if STREQUAL(text->IText, MUPDATEWF)
+                                    update();
+                        else if STREQUAL(text->IText, MMANUAL) 
+                                    executeApp(manualPath);
+                        else if STREQUAL(text->IText, MPREF) 
+                        { 
+                            createPreferencesWin();
+                            prepareAndWriteInfo();
+                            writeInfo(); 
+                            changeWindowSizeAndPosition();
+                        }
+                        else if STREQUAL(text->IText, MSETDTM)
+                        {
+                            executeApp(PREFTIME);
+                            update();
+                        }
+                        else if STREQUAL(text->IText, MSYNCSTUS)
+                        {
+                            if (fileExist("SYS:C/sntp"))
+                            {
+                            executeApp(SNTP);
+                            update();
+                            }
+                            else
+                            {
+                            ClearMenuStrip(Window);
+                            EasyRequest(Window, &SNTPMessage, NULL, NULL);
+                            SetMenuStrip(Window, amiMenu);
+                            }
+                        }
+                        else if STREQUAL(text->IText, MAU)
+                                {
+                                    if (IsAddedToUserStartup())
+                                    {
+                                    ClearMenuStrip(Window);
+                                    EasyRequest(Window, &addedUserStartupPreviously, NULL, NULL);
+                                    SetMenuStrip(Window, amiMenu);
+                                    }
+                                    else
+                                    {
+                                        sprintf(cmd, "echo \"*N*NRun >NIL: %s ; %s\" >> %s >NIL:", appPath, APPNAME, USERSTARTUP);      
+                                        executeApp(cmd);
+                                        ClearMenuStrip(Window);
+                                        EasyRequest(Window, &addedUserStartup, NULL, NULL);
+                                        SetMenuStrip(Window, amiMenu);
+                                    }
+                                }
+                        else if STREQUAL(text->IText, MRU)
+                                {
+                                    if(IsAddedToUserStartup())
+                                    {
+                                        RemoveLineFromUserStartup();
+                                        ClearMenuStrip(Window);
+                                        EasyRequest(Window, &RemoveFromUserStartup, NULL, NULL);
+                                        SetMenuStrip(Window, amiMenu);
+                                    }
+                                    else
+                                    {
+                                        ClearMenuStrip(Window);
+                                        EasyRequest(Window, &RemoveFromUserStartupW, NULL, NULL);
+                                        SetMenuStrip(Window, amiMenu);
+                                    }
+                                }
+                                    
+                        code = item->NextSelect;
+                    }
+                break;
+            
+                default:
+                break;
+            }
+
+            ReplyMsg(msg);
+            
+        }
+
+        if(!dragging)
+        {
+            Delay(WAITONESECOND/2); 
+            refresh++;
+        }
+       
+    }
+
+    beforeClosing();
+    return 0x00;
+}
+
+void changeWindowSizeAndPosition()
+{
+    switch (style)
+    {
+        case 0: // Bar
+            ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - newWindowWidth - ICONWIDTH + addX, 1 + addY, (addY<screen->BarHeight) ? newWindowWidth : newWindowWidth+2, (addY<screen->BarHeight) ? barHeight : ((screenFont->tf_YSize>ICONHEIGHT) ? screenFont->tf_YSize + 4 : ICONHEIGHT + 4 ));
+            break;
+        case 1: // ICONIC
+            ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - ICONWIDTH + addX - 4, 1 + addY, ICONWIDTH+4, ICONHEIGHT+4);
+            break;
+        case 2: // Digital
+            ChangeWindowBox(Window, IntuitionBase->ActiveScreen->Width - PANELWIDTH + 1 + addX, 1 + addY, PANELWIDTH-1, PANELHEIGHT);
+        default:
+            break;
+    }
+    WindowToBack(Window);
+}
+
+void writeInfo(void)
+{
+    int i,ii,iii;     
+    struct ViewPort *vp;
+    char strdeg[2];
+    int deg, hane, mode;
+    
+    BOOL freeBarStyle;
+    int border = 0;
+    getColorsFromWBPalette();
+    vp = (struct ViewPort*) ViewPortAddress(Window);
+    LoadRGB4(vp, colormap, COLORCOUNT);
+
+    SetFont(RP, screenFont);
+    newWindowWidth = TextLength(RP, screenText, newWidth) + ICONWIDTH;
+    Move(RP,0,0);
+
+    // bar style
+    if(style==BAR)
+    {
+        freeBarStyle = addY>screen->BarHeight;
+        border = (freeBarStyle) ? 1 : 0;
+        if(freeBarStyle)
+        {
+            SetAPen(RP, textColor);
+            RectFill(RP, 0, 0, newWindowWidth+1, Window->Height-1);
+        }
         SetAPen(RP, backgroundColor);
-        Move(RP,0,0);
-        RectFill(RP,0,0, Window->Width+2, Window->Height+2);
+        RectFill(RP, 0+border, 0+border, newWindowWidth-1, Window->Height-1-border);
         SetAPen(RP, textColor);
         SetBPen(RP, backgroundColor);
         
         // write text
-        Move(RP, ICONWIDTH, 6 + addH + (barHeight-screenFont->tf_YSize)/2);
+        Move(RP, ICONWIDTH+border+1, 6+border + addTextY + (Window->Height - screenFont->tf_YSize)/2 - 1);
         Text(RP, screenText, strlen(screenText));
-
-        newWindowWidth = TextLength(RP, screenText, newWidth) + 24;
         
-        // for testing => indx=?;
-        // draw weather icon
-        if(!STREQUAL(displayIcon, "0"))
+    }
+
+    // ICONIC style
+    if(style==ICONIC)
+    {
+        SetAPen(RP, textColor);
+        RectFill(RP, 0, 0, ICONWIDTH+3, ICONHEIGHT+3);
+        SetAPen(RP, styleColor);
+        RectFill(RP, 1, 1, ICONWIDTH+2, ICONHEIGHT+2);
+
+    }
+
+    if(style==DIGITAL)
+    {
+        // setup panel
+        for (i = 0; i < PANELHEIGHT; i++)
         {
-            for(i=10*indx;i<10*indx+10;i++)
+            for (ii = 0; ii < PANELWIDTH-1; ii++)
             {
-                for(ii=0;ii<24;ii++)
+                switch(digitalPanel[i][ii])
                 {
-                    switch(images[i][ii])
-                    {
-                        case '*': SetAPen(RP, textColor); break;
-                        case '+': SetAPen(RP, sunColor); break;
-                        case '-': SetAPen(RP, cloudColor); break;
-                        case '=': SetAPen(RP, lcloudColor); break;
-                        case '#': SetAPen(RP, dcloudColor); break;
-                        case ' ': SetAPen(RP, backgroundColor); break;
-                    }
-                    WritePixel(RP, ii, i%10 + (barHeight-screenFont->tf_YSize )/2);
+                    case '*': SetAPen(RP, textColor); break;
+                    case 'W': SetAPen(RP, lcloudColor); break;
+                    case 'B': SetAPen(RP, styleColor); break;
+                    case ' ': SetAPen(RP, backgroundColor); break;
                 }
-            } 
+                WritePixel(RP, ii, i%PANELHEIGHT);
+            }
+            
         }
 
-        CloseFont(screenFont);
+        strcpy(strdeg, "X");
+        // write deg.
+        for (hane = strlen(wdata[2])-3, iii=2; hane >= 0; hane--, iii--)
+        {
+            strdeg[0] = wdata[2][hane];
+
+            deg = (STREQUAL(strdeg, "-")) ? 10 : atoi(strdeg);
+
+            for (i = FONTHEIGHT*deg; i < FONTHEIGHT*deg+FONTHEIGHT; i++)
+            {
+                for (ii = 0; ii < FONTWIDTH-1; ii++)
+                {
+                    switch(numberFont[i][ii])
+                    {
+                        case '*': SetAPen(RP, textColor); break;
+                        case 'B': SetAPen(RP, shadowColor); break;
+                        case ' ': SetAPen(RP, backgroundColor); break;
+                    }
+                    WritePixel(RP, ii+30+iii*FONTWIDTH, i%FONTHEIGHT + 16);
+                }
+                
+            }
+
+        }
+
+        // write mode
+        mode = (STREQUAL(unit,"metric"))?0:1;
+
+        for (i = mode*15; i < 15+mode*15; i++)
+        {
+            for (ii = 0; ii < 18; ii++)
+            {
+                switch(degMode[i][ii])
+                {
+                    case '*': SetAPen(RP, textColor); break;
+                    case 'B': SetAPen(RP, shadowColor); break;
+                    case ' ': SetAPen(RP, backgroundColor); break;
+                }
+                WritePixel(RP, ii+81, i%15+16);
+            }
+            
+        }
+        
     }
-    FreeMem(textattr->ta_Name, 48);
-    FreeMem(textattr, sizeof(struct TextAttr));
+
+    // for testing => indx=?;
+    // draw weather icon
+    if((!STREQUAL(displayIcon, "0"))||(style!=BAR))
+    {
+        for(i=ICONHEIGHT*indx;i<ICONHEIGHT*indx+ICONHEIGHT;i++)
+        {
+            for(ii=0;ii<ICONWIDTH-1;ii++)
+            {
+                switch(images[i][ii])
+                {
+                    case '*': SetAPen(RP, textColor); break;
+                    case '+': SetAPen(RP, sunColor); break;
+                    case '-': SetAPen(RP, cloudColor); break;
+                    case '=': SetAPen(RP, lcloudColor); break;
+                    case '#': SetAPen(RP, dcloudColor); break;
+                    case ' ': SetAPen(RP, (style==ICONIC)?styleColor : backgroundColor); break;
+                }
+                if(style==DIGITAL)
+                    WritePixel(RP, ii+5, i%ICONHEIGHT + 13);
+                else
+                    WritePixel(RP, ii+border+1, i%ICONHEIGHT + (Window->Height - screenFont->tf_YSize )/2 + ((style==ICONIC)?1:0));
+            }
+        } 
+    }
+
 }
 
 void update(void)
@@ -672,17 +886,15 @@ void update(void)
     
     indx = iconIndex(wdata[3]);
     strcpy(wdata[2], temperatureWithUnit(wdata[2], unit));
-    
-    if (fileExist(wf))
-    {
-        Execute("delete RAM:weather.json >NIL:",NULL,NULL);
-    }
                  
     first=TRUE;
 }
 
 void beforeClosing()
 {
+    CloseFont(screenFont);
+    FreeMem(textattr->ta_Name, 48);
+    FreeMem(textattr, sizeof(struct TextAttr));
     UnlockPubScreen(NULL, screen);
     ClearMenuStrip(Window);
     FreeVisualInfo(VisualInfoPtr);
@@ -754,7 +966,7 @@ void LoadPrefs(void)
         addY = atoi(buffer);    // addY
 
         FGets(fp, buffer, BUFFER/8);
-        addH = atoi(buffer);    // addH
+        addTextY = atoi(buffer);    // addTextY
 
         FGets(fp, buffer, BUFFER/8);
         textColor = atoi(buffer); // text color
@@ -774,6 +986,15 @@ void LoadPrefs(void)
         FGets(fp, buffer, BUFFER/8);
         dcloudColor = atoi(buffer); // dark cloud color
 
+        FGets(fp, buffer, BUFFER/8);
+        style = atoi(buffer);  // style
+
+        FGets(fp, buffer, BUFFER/8);
+        styleColor = atoi(buffer); // panel color
+
+        FGets(fp, buffer, BUFFER/8);
+        shadowColor = atoi(buffer); // shadow color
+
 
         strcpy(tm, months);
         strcpy(td, days);
@@ -790,7 +1011,7 @@ void SavePrefs(void)
 	fp = Open(PREFFILEPATH, MODE_NEWFILE);
 	if (fp)
 	{
-		sprintf(fpStr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n", location, unit, lang, apikey, days, months, displayIcon, displayLocation, displayDescription, displayDateTime, addX, addY, addH, textColor, backgroundColor, sunColor, cloudColor, lcloudColor, dcloudColor);
+		sprintf(fpStr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n", location, unit, lang, apikey, days, months, displayIcon, displayLocation, displayDescription, displayDateTime, addX, addY, addTextY, textColor, backgroundColor, sunColor, cloudColor, lcloudColor, dcloudColor, style, styleColor, shadowColor);
 		FPuts(fp, fpStr);
 		Close(fp);
 	}
@@ -824,7 +1045,7 @@ void createPreferencesWin(void)
         IDCHECKBOXDISPLAYDATETIME,		
         IDINTEGERADDX,
         IDINTEGERADDY,
-        IDINTEGERADDH,
+        IDINTEGERaddTextY,
 		IDBCANCEL,
         IDBSAVEANDCLOSE,
         IDPALETTETEXT,
@@ -838,11 +1059,15 @@ void createPreferencesWin(void)
         IDGETMYMONTHS,
         IDCHECKBOXDAYS,
         IDCHECKBOXMONTHS,
+        IDSTYLE,
+        IDSETTEXTPOSBUTTON,
+        IDPALETTESTYLE,
+        IDPALETTESHADOW,
 		// end of gadget id
 		IDLAST
 	};
 	
-	struct Gadget *co[IDLAST-1];
+	struct Gadget *gad[IDLAST-1];
 	struct Gadget *vcreatePreferencesParent = NULL;
 	Object *createPreferencesWinObj = NULL;
 	struct Window *createPreferencesWin = NULL;
@@ -855,7 +1080,9 @@ void createPreferencesWin(void)
     int localDays=0, localMonths=0;
 	
 	struct List *chooserUnit;
+    struct List *tablabels;
 	chooserUnit = ChooserLabels( "metric","imperial", NULL );
+    tablabels = ClickTabs("Days & Months", "Display", "Colors", "Position & Style", "ENV Variables", "API Key", NULL);
 
     dIcon = STREQUAL(displayIcon, "1")?TRUE:FALSE;
     dLocation = STREQUAL(displayLocation, "1")?TRUE:FALSE;
@@ -872,18 +1099,18 @@ void createPreferencesWin(void)
         WA_Activate,              TRUE,
         WA_DragBar,               TRUE,
         WA_CloseGadget,           TRUE,
-		WA_SizeGadget, 			  TRUE,
+		WA_SizeGadget, 			  FALSE,
         WA_SmartRefresh,          TRUE,
-        WA_MinWidth,              512,
-        WA_MinHeight,             30,
-        WA_MaxWidth,              512,
-        WA_MaxHeight,             -1,
-        WA_InnerWidth,                 512,
-        WA_InnerHeight,                30,
+        WA_MinWidth,              400,
+        WA_MinHeight,             60,
+        WA_MaxWidth,              400,
+        WA_MaxHeight,             60,
+        WA_InnerWidth,            400,
+        WA_InnerHeight,           60,
         WA_Left,                  0,
         WA_Top,                   0,
         WA_SizeBRight,            FALSE,
-        WA_SizeBBottom,           TRUE,
+        WA_SizeBBottom,           FALSE,
         WA_NewLookMenus,          TRUE,
         WINDOW_Position,          WPOS_CENTERSCREEN,
 		WINDOW_ParentGroup,       vcreatePreferencesParent = VGroupObject,
@@ -891,7 +1118,6 @@ void createPreferencesWin(void)
 												LAYOUT_DeferLayout, TRUE,
 
                                                 LAYOUT_AddChild, SpaceObject,
-                                                                GA_ID, 98,
                                                                 SPACE_Transparent,TRUE,
                                                                 SPACE_BevelStyle, BVS_NONE,
                                                 End,
@@ -899,7 +1125,7 @@ void createPreferencesWin(void)
 												// LOCATION
                                                 LAYOUT_AddChild, HGroupObject,
 
-                                                    LAYOUT_AddChild, co[0] = (struct Gadget *) StringObject,
+                                                    LAYOUT_AddChild, gad[IDSTRINGLOCATION-1] = (struct Gadget *) StringObject,
                                                                 GA_ID, IDSTRINGLOCATION,
                                                                 GA_RelVerify, TRUE,
                                                                 STRINGA_TextVal, location,
@@ -908,7 +1134,7 @@ void createPreferencesWin(void)
                                                                 STRINGA_HookType, SHK_CUSTOM,
                                                     End,
 
-                                                    LAYOUT_AddChild, co[21] = ButtonObject,
+                                                    LAYOUT_AddChild, gad[IDGETMYLOCATION-1] = ButtonObject,
 															GA_Text, "_Get My Location",
 															GA_RelVerify, TRUE,
 															GA_ID, IDGETMYLOCATION,
@@ -916,339 +1142,538 @@ void createPreferencesWin(void)
                                                 End,
                                                 CHILD_Label,  LabelObject,
                                                                 LABEL_Justification, 0,
-                                                                LABEL_Text, "           Location ",
+                                                                LABEL_SoftStyle, FSF_BOLD,
+                                                                LABEL_Text, "  Location ",
                                                 End,
 
-                                                // UNIT
-                                                LAYOUT_AddChild, co[1] = (struct Gadget *) ChooserObject,
-                                                                GA_ID, IDINTEGERUNIT,
-                                                                GA_RelVerify, TRUE,
-                                                                CHOOSER_PopUp, TRUE,
-                                                                CHOOSER_MaxLabels, 2,
-                                                                CHOOSER_Offset, 0,
-                                                                CHOOSER_Selected, (STREQUAL(unit,"metric"))?0:1,
-                                                                CHOOSER_Labels, chooserUnit,
-                                                End,                                                
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "               Unit ",
-                                                End,
-
-                                                // LANGUAGE
-                                                LAYOUT_AddChild, co[2] = (struct Gadget *) ChooserObject,
-                                                                GA_ID, IDINTEGERUNIT,
-                                                                GA_RelVerify, TRUE,
-                                                                CHOOSER_PopUp, TRUE,
-                                                                CHOOSER_MaxLabels, 46,
-                                                                CHOOSER_Offset, 0,
-                                                                CHOOSER_Selected, getIndexChooser(lang),
-                                                                CHOOSER_LabelArray, clanguages,
-                                                End,  
-                                                
-                                                CHILD_Label,  LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "           Language ",
-                                                End,
-
-                                                // DAYS
-                                                LAYOUT_AddChild, co[3] = (struct Gadget *) StringObject,
-                                                                GA_ID, IDSTRINGDAYS,
-                                                                GA_RelVerify, TRUE,
-                                                                STRINGA_TextVal, days,
-                                                                STRINGA_MaxChars, 255,
-                                                                STRINGA_Justification, GACT_STRINGLEFT,
-                                                                STRINGA_HookType, SHK_CUSTOM,
-                                                End,
-                                                
-                                                CHILD_Label,  LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "               Days ",
-                                                End,
-
-                                                // MONTHS
-                                                LAYOUT_AddChild, co[4] = (struct Gadget *) StringObject,
-                                                                GA_ID, IDSTRINGMONTHS,
-                                                                GA_RelVerify, TRUE,
-                                                                STRINGA_TextVal, months,
-                                                                STRINGA_MaxChars, 255,
-                                                                STRINGA_Justification, GACT_STRINGLEFT,
-                                                                STRINGA_HookType, SHK_CUSTOM,
-                                                End,
-                                                
-                                                CHILD_Label,  LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "             Months ",
-                                                End,
-
-                                                // Get days and months
                                                 LAYOUT_AddChild, HGroupObject,
-                                                    LAYOUT_AddChild, co[22] = ButtonObject,
-															GA_Text, "Get _Days",
-															GA_RelVerify, TRUE,
-															GA_ID, IDGETMYDAYS,
+                                                    // UNIT
+                                                    LAYOUT_AddChild, gad[IDINTEGERUNIT-1] = (struct Gadget *) ChooserObject,
+                                                                    GA_ID,  IDINTEGERUNIT,
+                                                                    GA_RelVerify, TRUE,
+                                                                    CHOOSER_PopUp, TRUE,
+                                                                    CHOOSER_MaxLabels, 2,
+                                                                    CHOOSER_Offset, 0,
+                                                                    CHOOSER_Selected, (STREQUAL(unit,"metric"))?0:1,
+                                                                    CHOOSER_Labels, chooserUnit,
+                                                    End,                                                
+                                                    CHILD_Label, LabelObject,
+                                                                    LABEL_Justification, 0,
+                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                    LABEL_Text, "      Unit ",
                                                     End,
 
-                                                LAYOUT_AddChild, co[24] = (struct Gadget *) CheckBoxObject,
-                                                                                GA_ID, IDCHECKBOXDAYS,
-                                                                                GA_RelVerify, TRUE,
-                                                                                GA_Selected, TRUE,
-                                                                                GA_Text, "Use long abbreviations for days     ",
-                                                                                CHECKBOX_TextPen, 1,
-                                                                                CHECKBOX_FillTextPen, 1,
-                                                                                CHECKBOX_BackgroundPen, 0,
-                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
-                                                End,
-
-                                                End,
-                                                CHILD_Label,  LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "                    ",
-                                                End,
-                                                LAYOUT_AddChild, HGroupObject,
-                                                    LAYOUT_AddChild, co[23] = ButtonObject,
-															GA_Text, "Get _Months",
-															GA_RelVerify, TRUE,
-															GA_ID, IDGETMYMONTHS,
+                                                    // LANGUAGE
+                                                    LAYOUT_AddChild, gad[IDSTRINGLANGUAGE-1] = (struct Gadget *) ChooserObject,
+                                                                    GA_ID, IDSTRINGLANGUAGE,
+                                                                    GA_RelVerify, TRUE,
+                                                                    CHOOSER_PopUp, TRUE,
+                                                                    CHOOSER_MaxLabels, 46,
+                                                                    CHOOSER_Offset, 0,
+                                                                    CHOOSER_Selected, getIndexChooser(lang),
+                                                                    CHOOSER_LabelArray, clanguages,
+                                                    End,  
+                                                    
+                                                    CHILD_Label,  LabelObject,
+                                                                    LABEL_Justification, 0,
+                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                    LABEL_Text, "  Language ",
                                                     End,
-
-                                                    LAYOUT_AddChild, co[25] = (struct Gadget *) CheckBoxObject,
-                                                                                GA_ID, IDCHECKBOXMONTHS,
-                                                                                GA_RelVerify, TRUE,
-                                                                                GA_Selected, TRUE,
-                                                                                GA_Text, "Use months of the year abbreviations",
-                                                                                CHECKBOX_TextPen, 1,
-                                                                                CHECKBOX_FillTextPen, 1,
-                                                                                CHECKBOX_BackgroundPen, 0,
-                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
-                                                End,
-
-                                                End,
-                                                CHILD_Label,  LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "                    ",
-                                                End,
-
-                                                // APIKEY
-                                                LAYOUT_AddChild, co[5] = (struct Gadget *) StringObject,
-                                                                GA_ID, IDSTRINGAPIKEY,
-                                                                GA_RelVerify, TRUE,
-                                                                STRINGA_TextVal, apikey,
-                                                                STRINGA_MaxChars, 64,
-                                                                STRINGA_Justification, GACT_STRINGLEFT,
-                                                                STRINGA_HookType, SHK_CUSTOM,
-                                                End,
-                                                
-                                                CHILD_Label,  LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "             APIKEY ",
-                                                End,
-
-                                                // Displays icon
-                                                LAYOUT_AddChild, co[6] = (struct Gadget *) CheckBoxObject,
-                                                                                GA_ID, IDCHECKBOXDISPLAYICON,
-                                                                                GA_RelVerify, TRUE,
-                                                                                GA_Selected, dIcon,
-                                                                                GA_Text, "Displays icon",
-                                                                                CHECKBOX_TextPen, 1,
-                                                                                CHECKBOX_FillTextPen, 1,
-                                                                                CHECKBOX_BackgroundPen, 0,
-                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
-                                                End,
-                                                CHILD_Label,  LabelObject,
-                                                            LABEL_Justification, 0,
-                                                            LABEL_Text, "                    ",
-                                                End,
-
-                                                // Displays location
-                                                LAYOUT_AddChild, co[7] = (struct Gadget *) CheckBoxObject,
-                                                                                GA_ID, IDCHECKBOXDISPLAYLOCATION,
-                                                                                GA_RelVerify, TRUE,
-                                                                                GA_Selected, dLocation,
-                                                                                GA_Text, "Displays location",
-                                                                                CHECKBOX_TextPen, 1,
-                                                                                CHECKBOX_FillTextPen, 1,
-                                                                                CHECKBOX_BackgroundPen, 0,
-                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
-                                                End,
-                                                CHILD_Label,  LabelObject,
-                                                            LABEL_Justification, 0,
-                                                            LABEL_Text, "                    ",
-                                                End,
-                                                        
-                                                // Displays description
-                                                LAYOUT_AddChild, co[8] = (struct Gadget *) CheckBoxObject,
-                                                                                GA_ID, IDCHECKBOXDISPLAYDESCRIPTION,
-                                                                                GA_RelVerify, TRUE,
-                                                                                GA_Selected, dDescription,
-                                                                                GA_Text, "Displays description",
-                                                                                CHECKBOX_TextPen, 1,
-                                                                                CHECKBOX_FillTextPen, 1,
-                                                                                CHECKBOX_BackgroundPen, 0,
-                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
-                                                End,
-                                                CHILD_Label,  LabelObject,
-                                                            LABEL_Justification, 0,
-                                                            LABEL_Text, "                    ",
-                                                End,
-
-                                                // Displays date & time
-                                                LAYOUT_AddChild, co[9] = (struct Gadget *) CheckBoxObject,
-                                                                                GA_ID, IDCHECKBOXDISPLAYDATETIME,
-                                                                                GA_RelVerify, TRUE,
-                                                                                GA_Selected, dDatetime,
-                                                                                GA_Text, "Displays date & time",
-                                                                                CHECKBOX_TextPen, 1,
-                                                                                CHECKBOX_FillTextPen, 1,
-                                                                                CHECKBOX_BackgroundPen, 0,
-                                                                                CHECKBOX_TextPlace, PLACETEXT_RIGHT,
-                                                End,
-                                                CHILD_Label,  LabelObject,
-                                                            LABEL_Justification, 0,
-                                                            LABEL_Text, "                    ",
-                                                End,
-
-                                                // Add to pos X
-                                                LAYOUT_AddChild, co[10] = (struct Gadget *) IntegerObject,
-                                                                                GA_ID, IDINTEGERADDX,
-                                                                                GA_RelVerify, TRUE,
-                                                                                INTEGER_Number, addX,
-                                                                                INTEGER_MaxChars, 5,
-                                                                                INTEGER_Minimum, -IntuitionBase->ActiveScreen->Width,
-                                                                                INTEGER_Maximum, IntuitionBase->ActiveScreen->Width,
-                                                                                INTEGER_Arrows, TRUE,
-                                                                                STRINGA_Justification, GACT_STRINGRIGHT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "       Add to Pos X ",
-                                                End,
-
-                                                // Add to pos Y
-                                                LAYOUT_AddChild, co[11] = (struct Gadget *) IntegerObject,
-                                                                                GA_ID, IDINTEGERADDY,
-                                                                                GA_RelVerify, TRUE,
-                                                                                INTEGER_Number, addY,
-                                                                                INTEGER_MaxChars, 5,
-                                                                                INTEGER_Minimum, -IntuitionBase->ActiveScreen->Height,
-                                                                                INTEGER_Maximum, IntuitionBase->ActiveScreen->Height,
-                                                                                INTEGER_Arrows, TRUE,
-                                                                                STRINGA_Justification, GACT_STRINGRIGHT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "        Add to Pos Y ",
-                                                End,
-
-												// Add to Height
-                                                LAYOUT_AddChild, co[12] = (struct Gadget *) IntegerObject,
-                                                                                GA_ID, IDINTEGERADDH,
-                                                                                GA_RelVerify, TRUE,
-                                                                                INTEGER_Number, addH,
-                                                                                INTEGER_MaxChars, 2,
-                                                                                INTEGER_Minimum, -8,
-                                                                                INTEGER_Maximum, 8,
-                                                                                INTEGER_Arrows, TRUE,
-                                                                                STRINGA_Justification, GACT_STRINGRIGHT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "Add to Pos Y of Text ",
-                                                End,
-
-                                                // Text Color
-                                                LAYOUT_AddChild, co[15] = (struct Gadget *) PaletteObject,
-                                                                                GA_ReadOnly,                FALSE,
-                                                                                GA_ID,                      IDPALETTETEXT,
-                                                                                GA_RelVerify,               TRUE,
-                                                                                PALETTE_Colour,             textColor,
-                                                                                PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         COLORCOUNT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "                Text ",
-                                                End,
-
-                                                // Background Color
-                                                LAYOUT_AddChild, co[16] = (struct Gadget *) PaletteObject,
-                                                                                GA_ReadOnly,                FALSE,
-                                                                                GA_ID,                      IDPALETTEBACKGROUND,
-                                                                                GA_RelVerify,               TRUE,
-                                                                                PALETTE_Colour,             backgroundColor,
-                                                                                PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         COLORCOUNT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "          Background ",
-                                                End,
-
-                                                // Sun Color
-                                                LAYOUT_AddChild, co[17] = (struct Gadget *) PaletteObject,
-                                                                                GA_ReadOnly,                FALSE,
-                                                                                GA_ID,                      IDPALETTESUN,
-                                                                                GA_RelVerify,               TRUE,
-                                                                                PALETTE_Colour,             sunColor,
-                                                                                PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         COLORCOUNT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "                 Sun ",
-                                                End,
-
-                                                // Cloud Color
-                                                LAYOUT_AddChild, co[18] = (struct Gadget *) PaletteObject,
-                                                                                GA_ReadOnly,                FALSE,
-                                                                                GA_ID,                      IDPALETTECLOUD,
-                                                                                GA_RelVerify,               TRUE,
-                                                                                PALETTE_Colour,             cloudColor,
-                                                                                PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         COLORCOUNT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "               Cloud ",
-                                                End,
-
-                                                // Light Cloud Color
-                                                LAYOUT_AddChild, co[19] = (struct Gadget *) PaletteObject,
-                                                                                GA_ReadOnly,                FALSE,
-                                                                                GA_ID,                      IDPALETTELCLOUD,
-                                                                                GA_RelVerify,               TRUE,
-                                                                                PALETTE_Colour,             lcloudColor,
-                                                                                PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         COLORCOUNT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "         Light Cloud ",
-                                                End,
-                                                
-                                                // Dark Cloud Color
-                                                LAYOUT_AddChild, co[20] = (struct Gadget *) PaletteObject,
-                                                                                GA_ReadOnly,                FALSE,
-                                                                                GA_ID,                      IDPALETTEDCLOUD,
-                                                                                GA_RelVerify,               TRUE,
-                                                                                PALETTE_Colour,             dcloudColor,
-                                                                                PALETTE_ColourOffset,       0,
-                                                                                PALETTE_NumColours,         COLORCOUNT,
-                                                End,
-                                                CHILD_Label, LabelObject,
-                                                                LABEL_Justification, 0,
-                                                                LABEL_Text, "          Dark Cloud ",
                                                 End,
 
                                                 LAYOUT_AddChild, SpaceObject,
-                                                                                GA_ID, 99,
-                                                                                SPACE_Transparent,TRUE,
-                                                                                SPACE_BevelStyle, BVS_NONE,
+                                                            SPACE_Transparent,TRUE,
+                                                            SPACE_BevelStyle, BVS_NONE,
+                                                End,
+
+                                                LAYOUT_AddChild,  ClickTabObject,
+                                                                    GA_RelVerify, TRUE,
+                                                                    CLICKTAB_Labels, tablabels,
+
+                                                                    CLICKTAB_PageGroup, PageObject,
+                                                                    
+                                                                        LAYOUT_DeferLayout, TRUE,
+                                                                        // Days & Months
+                                                                        PAGE_Add, VGroupObject,
+                                                                            LAYOUT_SpaceOuter, TRUE,
+                                                                            LAYOUT_SpaceInner, TRUE,
+
+                                                                                    // DAYS
+                                                                                    LAYOUT_AddChild, gad[IDSTRINGDAYS-1] = (struct Gadget *) StringObject,
+                                                                                                    GA_ID, IDSTRINGDAYS,
+                                                                                                    GA_RelVerify, TRUE,
+                                                                                                    STRINGA_TextVal, days,
+                                                                                                    STRINGA_MaxChars, 255,
+                                                                                                    STRINGA_Justification, GACT_STRINGLEFT,
+                                                                                                    STRINGA_HookType, SHK_CUSTOM,
+                                                                                    End,
+                                                                                    
+                                                                                    CHILD_Label,  LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "      Days ",
+                                                                                    End,
+
+                                                                                    // Get days and months
+                                                                                    LAYOUT_AddChild, HGroupObject,
+                                                                                        LAYOUT_AddChild, gad[IDGETMYDAYS-1] = ButtonObject,
+                                                                                                GA_Text, "Get _Days",
+                                                                                                GA_RelVerify, TRUE,
+                                                                                                GA_ID, IDGETMYDAYS,
+                                                                                        End,
+
+                                                                                        LAYOUT_AddChild, gad[IDCHECKBOXDAYS-1] = (struct Gadget *) CheckBoxObject,
+                                                                                                                    GA_ID, IDCHECKBOXDAYS,
+                                                                                                                    GA_RelVerify, TRUE,
+                                                                                                                    GA_Selected, TRUE,
+                                                                                                                    GA_Text, "Use long abbreviations for days     ",
+                                                                                                                    CHECKBOX_TextPen, 1,
+                                                                                                                    CHECKBOX_FillTextPen, 1,
+                                                                                                                    CHECKBOX_BackgroundPen, 0,
+                                                                                                                    CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                                                        End,
+
+                                                                                    End,
+                                                                                    CHILD_Label,  LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_Text, "           ",
+                                                                                    End,
+
+                                                                                    LAYOUT_AddChild, SpaceObject,
+                                                                                                    SPACE_Transparent,TRUE,
+                                                                                                    SPACE_BevelStyle, BVS_NONE,
+                                                                                    End,
+
+                                                                                    // MONTHS
+                                                                                    LAYOUT_AddChild, gad[IDSTRINGMONTHS-1] = (struct Gadget *) StringObject,
+                                                                                                    GA_ID, IDSTRINGMONTHS,
+                                                                                                    GA_RelVerify, TRUE,
+                                                                                                    STRINGA_TextVal, months,
+                                                                                                    STRINGA_MaxChars, 255,
+                                                                                                    STRINGA_Justification, GACT_STRINGLEFT,
+                                                                                                    STRINGA_HookType, SHK_CUSTOM,
+                                                                                    End,
+                                                                                    
+                                                                                    CHILD_Label,  LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "    Months ",
+                                                                                    End,
+
+                                                                                    
+
+                                                                                    LAYOUT_AddChild, HGroupObject,
+                                                                                        LAYOUT_AddChild, gad[IDGETMYMONTHS-1] = ButtonObject,
+                                                                                                GA_Text, "Get _Months",
+                                                                                                GA_RelVerify, TRUE,
+                                                                                                GA_ID, IDGETMYMONTHS,
+                                                                                        End,
+
+                                                                                        LAYOUT_AddChild, gad[IDCHECKBOXMONTHS-1] = (struct Gadget *) CheckBoxObject,
+                                                                                                                    GA_ID, IDCHECKBOXMONTHS,
+                                                                                                                    GA_RelVerify, TRUE,
+                                                                                                                    GA_Selected, TRUE,
+                                                                                                                    GA_Text, "Use months of the year abbreviations",
+                                                                                                                    CHECKBOX_TextPen, 1,
+                                                                                                                    CHECKBOX_FillTextPen, 1,
+                                                                                                                    CHECKBOX_BackgroundPen, 0,
+                                                                                                                    CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                                                        End,
+
+                                                                                    End,
+                                                                                    CHILD_Label,  LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_Text, "           ",
+                                                                                    End,
+
+                                                                                    LAYOUT_AddChild, SpaceObject,
+                                                                                            SPACE_Transparent,TRUE,
+                                                                                            SPACE_BevelStyle, BVS_NONE,
+                                                                                    End,
+                                                                        End,
+
+                                                                        // Display
+                                                                        PAGE_Add, VGroupObject,
+                                                                            LAYOUT_SpaceOuter, TRUE,
+                                                                            LAYOUT_SpaceInner, TRUE,
+                                                                                    LAYOUT_AddChild, HGroupObject,
+                                                                                        // Add to Pos Y of the text
+                                                                                        LAYOUT_AddChild, gad[IDINTEGERaddTextY-1] = (struct Gadget *) IntegerObject,
+                                                                                                                        GA_ID, IDINTEGERaddTextY,
+                                                                                                                        GA_RelVerify, TRUE,
+                                                                                                                        INTEGER_Number, addTextY,
+                                                                                                                        INTEGER_MaxChars, 3,
+                                                                                                                        INTEGER_Minimum, -16,
+                                                                                                                        INTEGER_Maximum, 16,
+                                                                                                                        INTEGER_Arrows, TRUE,
+                                                                                                                        STRINGA_Justification, GACT_STRINGRIGHT,
+                                                                                        End,
+                                                                                        CHILD_Label, LabelObject,
+                                                                                                        LABEL_Justification, 0,
+                                                                                                        LABEL_SoftStyle, FSF_BOLD,
+                                                                                                        LABEL_Text, " Position Y of the text ",
+                                                                                        End,
+
+                                                                                        LAYOUT_AddChild, gad[IDSETTEXTPOSBUTTON-1] = ButtonObject,
+                                                                                                GA_Text, " Set Position ",
+                                                                                                GA_RelVerify, TRUE,
+                                                                                                GA_ID, IDSETTEXTPOSBUTTON,
+                                                                                        End,
+                                                                                    End,
+
+                                                                                    // Displays icon
+                                                                                        LAYOUT_AddChild, gad[IDCHECKBOXDISPLAYICON-1] = (struct Gadget *) CheckBoxObject,
+                                                                                                                        GA_ID, IDCHECKBOXDISPLAYICON,
+                                                                                                                        GA_RelVerify, TRUE,
+                                                                                                                        GA_Selected, dIcon,
+                                                                                                                        GA_Text, "Displays icon       ",
+                                                                                                                        CHECKBOX_TextPen, 1,
+                                                                                                                        CHECKBOX_FillTextPen, 1,
+                                                                                                                        CHECKBOX_BackgroundPen, 0,
+                                                                                                                        CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                                                        End,
+                                                                                    // Displays location
+                                                                                        LAYOUT_AddChild, gad[IDCHECKBOXDISPLAYLOCATION-1] = (struct Gadget *) CheckBoxObject,
+                                                                                                                        GA_ID, IDCHECKBOXDISPLAYLOCATION,
+                                                                                                                        GA_RelVerify, TRUE,
+                                                                                                                        GA_Selected, dLocation,
+                                                                                                                        GA_Text, "Displays location   ",
+                                                                                                                        CHECKBOX_TextPen, 1,
+                                                                                                                        CHECKBOX_FillTextPen, 1,
+                                                                                                                        CHECKBOX_BackgroundPen, 0,
+                                                                                                                        CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                                                        End,
+                                                                                    
+                                                                                            
+                                                                                    // Displays description
+                                                                                        LAYOUT_AddChild, gad[IDCHECKBOXDISPLAYDESCRIPTION-1] = (struct Gadget *) CheckBoxObject,
+                                                                                                                        GA_ID, IDCHECKBOXDISPLAYDESCRIPTION,
+                                                                                                                        GA_RelVerify, TRUE,
+                                                                                                                        GA_Selected, dDescription,
+                                                                                                                        GA_Text, "Displays description",
+                                                                                                                        CHECKBOX_TextPen, 1,
+                                                                                                                        CHECKBOX_FillTextPen, 1,
+                                                                                                                        CHECKBOX_BackgroundPen, 0,
+                                                                                                                        CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                                                        End,
+
+                                                                                    // Displays date & time
+                                                                                        LAYOUT_AddChild, gad[IDCHECKBOXDISPLAYDATETIME-1] = (struct Gadget *) CheckBoxObject,
+                                                                                                                        GA_ID, IDCHECKBOXDISPLAYDATETIME,
+                                                                                                                        GA_RelVerify, TRUE,
+                                                                                                                        GA_Selected, dDatetime,
+                                                                                                                        GA_Text, "Displays date & time",
+                                                                                                                        CHECKBOX_TextPen, 1,
+                                                                                                                        CHECKBOX_FillTextPen, 1,
+                                                                                                                        CHECKBOX_BackgroundPen, 0,
+                                                                                                                        CHECKBOX_TextPlace, PLACETEXT_RIGHT,
+                                                                                        End,
+                                                                                    
+                                                                                    
+
+                                                                                    LAYOUT_AddChild, SpaceObject,
+                                                                                            SPACE_Transparent,TRUE,
+                                                                                            SPACE_BevelStyle, BVS_NONE,
+                                                                                    End,
+
+                                                                        End,
+
+                                                                        // Colors
+                                                                        PAGE_Add, VGroupObject,
+                                                                            LAYOUT_SpaceOuter, TRUE,
+                                                                            LAYOUT_SpaceInner, TRUE,
+
+                                                                                LAYOUT_AddChild, ButtonObject,
+                                                                                        GA_Text, "If desired to change colors, use Prefs/Palette.",
+                                                                                        BUTTON_BackgroundPen, 4,
+                                                                                        BUTTON_TextPen, 1,
+                                                                                        GA_ReadOnly, TRUE,
+                                                                                End,
+                                                                                CHILD_Label,  LabelObject,
+                                                                                                LABEL_Justification, 0,
+                                                                                                LABEL_SoftStyle, FSF_BOLD,
+                                                                                                LABEL_Text, "       Note ",
+                                                                                End,
+
+                                                                                LAYOUT_AddChild, HGroupObject,
+                                                                                    // Text Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTETEXT-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTETEXT,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             textColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "       Text ",
+                                                                                    End,
+
+                                                                                    // Background Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTEBACKGROUND-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTEBACKGROUND,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             backgroundColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, " Background ",
+                                                                                    End,
+                                                                                End,
+                                                                                LAYOUT_AddChild, HGroupObject,
+                                                                                    // Sun Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTESUN-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTESUN,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             sunColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "        Sun ",
+                                                                                    End,
+
+                                                                                    // Cloud Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTECLOUD-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTECLOUD,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             cloudColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "      Cloud ",
+                                                                                    End,
+                                                                                End,
+                                                                                LAYOUT_AddChild, HGroupObject,
+                                                                                    // Light Cloud Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTELCLOUD-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTELCLOUD,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             lcloudColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "Light Cloud ",
+                                                                                    End,
+                                                                                    
+                                                                                    // Dark Cloud Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTEDCLOUD-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTEDCLOUD,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             dcloudColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, " Dark Cloud ",
+                                                                                    End,
+
+                                                                                End,
+                                                                                LAYOUT_AddChild, HGroupObject,
+
+                                                                                    // Style Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTESTYLE-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTESTYLE,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             styleColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "      Style ",
+                                                                                    End,
+
+                                                                                    // Shadow Color
+                                                                                    LAYOUT_AddChild, gad[IDPALETTESHADOW-1] = (struct Gadget *) PaletteObject,
+                                                                                                                    GA_ReadOnly,                FALSE,
+                                                                                                                    GA_ID,                      IDPALETTESHADOW,
+                                                                                                                    GA_RelVerify,               TRUE,
+                                                                                                                    PALETTE_Colour,             shadowColor,
+                                                                                                                    PALETTE_ColourOffset,       0,
+                                                                                                                    PALETTE_NumColours,         COLORCOUNT,
+                                                                                    End,
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "     Shadow ",
+                                                                                    End,
+                                                                                End,
+
+                                                                                
+                                                                                LAYOUT_AddChild, SpaceObject,
+                                                                                            SPACE_Transparent,TRUE,
+                                                                                            SPACE_BevelStyle, BVS_NONE,
+                                                                                End,
+                                                                                
+
+
+                                                                        End,
+
+                                                                        // Position & Style
+                                                                        PAGE_Add, VGroupObject,
+                                                                            LAYOUT_SpaceOuter, TRUE,
+                                                                            LAYOUT_SpaceInner, TRUE,
+
+                                                                                LAYOUT_AddChild, ButtonObject,
+                                                                                        GA_Text, "Select the window and drag to the new position",
+                                                                                        BUTTON_BackgroundPen, 4,
+                                                                                        BUTTON_TextPen, 1,
+                                                                                        GA_ReadOnly, TRUE,
+                                                                                End,
+                                                                                CHILD_Label,  LabelObject,
+                                                                                                LABEL_Justification, 0,
+                                                                                                LABEL_SoftStyle, FSF_BOLD,
+                                                                                                LABEL_Text, " Position ",
+                                                                                End,
+
+                                                                                LAYOUT_AddChild, HGroupObject,
+
+                                                                                    LAYOUT_AddChild, gad[IDSTYLE-1] = (struct Gadget *) ChooserObject,
+                                                                                                    GA_ID,  IDSTYLE,
+                                                                                                    GA_RelVerify, TRUE,
+                                                                                                    CHOOSER_PopUp, TRUE,
+                                                                                                    CHOOSER_MaxLabels, 3,
+                                                                                                    CHOOSER_Offset, 0,
+                                                                                                    CHOOSER_Selected, style,
+                                                                                                    CHOOSER_LabelArray, styles,
+                                                                                    End,                                                
+                                                                                    CHILD_Label, LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "    Style ",
+                                                                                    End,
+                                                                            
+                                                                                End,
+
+                                                                                LAYOUT_AddChild, SpaceObject,
+                                                                                            SPACE_Transparent,TRUE,
+                                                                                            SPACE_BevelStyle, BVS_NONE,
+                                                                                End,
+
+                                                                        End,
+
+                                                                        // ENV Variables
+                                                                        PAGE_Add, VGroupObject,
+                                                                            LAYOUT_SpaceOuter, TRUE,
+                                                                            LAYOUT_SpaceInner, TRUE,
+
+                                                                            LAYOUT_AddChild, VGroupObject,
+                                                                                LAYOUT_AddChild, LabelObject,
+                                                                                                        LABEL_Justification, 0,
+                                                                                                        LABEL_SoftStyle, FSF_BOLD,
+                                                                                                        LABEL_Text, " ",
+                                                                                End,
+
+                                                                                CHILD_Label, LabelObject,
+                                                                                                        LABEL_Justification, 0,
+                                                                                                        LABEL_SoftStyle, FSF_BOLD,
+                                                                                                        LABEL_Text, "Environment variables for weather forecast data",
+                                                                                End,
+
+                                                                                LAYOUT_AddChild, ButtonObject,
+                                                                                            GA_Text, " CurrentTemperature ",
+                                                                                            BUTTON_BackgroundPen, 7,
+                                                                                            BUTTON_TextPen, 1,
+                                                                                            GA_ReadOnly, TRUE,
+                                                                                End,                                                                                
+
+                                                                                LAYOUT_AddChild, ButtonObject,
+                                                                                            GA_Text, " WeatherDescription ",
+                                                                                            BUTTON_BackgroundPen, 3,
+                                                                                            BUTTON_TextPen, 1,
+                                                                                            GA_ReadOnly, TRUE,
+                                                                                End,
+
+                                                                                LAYOUT_AddChild, ButtonObject,
+                                                                                            GA_Text, " Location ",
+                                                                                            BUTTON_BackgroundPen, 4,
+                                                                                            BUTTON_TextPen, 1,
+                                                                                            GA_ReadOnly, TRUE,
+                                                                                End,
+                                                                                
+                                                                                LAYOUT_AddChild, SpaceObject,
+                                                                                            SPACE_Transparent,TRUE,
+                                                                                            SPACE_BevelStyle, BVS_NONE,
+                                                                                End,
+
+                                                                            End,
+                                                                        
+                                                                        End,
+
+                                                                        // API Key
+                                                                        PAGE_Add, VGroupObject,
+                                                                            LAYOUT_SpaceOuter, TRUE,
+                                                                            LAYOUT_SpaceInner, TRUE,
+                                                                            
+                                                                                    LAYOUT_AddChild, ButtonObject,
+                                                                                            GA_Text, "Use your own OpenWeather API key",
+                                                                                            BUTTON_BackgroundPen, 4,
+                                                                                            BUTTON_TextPen, 1,
+                                                                                            GA_ReadOnly, TRUE,
+                                                                                    End,
+                                                                                    CHILD_Label,  LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "      Note ",
+                                                                                    End,
+                                                                                    // APIKEY
+                                                                                    LAYOUT_AddChild, gad[IDSTRINGAPIKEY-1] = (struct Gadget *) StringObject,
+                                                                                                    GA_ID, IDSTRINGAPIKEY,
+                                                                                                    GA_RelVerify, TRUE,
+                                                                                                    STRINGA_TextVal, apikey,
+                                                                                                    STRINGA_MaxChars, 64,
+                                                                                                    STRINGA_Justification, GACT_STRINGLEFT,
+                                                                                                    STRINGA_HookType, SHK_CUSTOM,
+                                                                                    End,
+                                                                                    
+                                                                                    CHILD_Label,  LabelObject,
+                                                                                                    LABEL_Justification, 0,
+                                                                                                    LABEL_SoftStyle, FSF_BOLD,
+                                                                                                    LABEL_Text, "    APIKEY ",
+                                                                                    End,
+
+                                                                                    LAYOUT_AddChild, SpaceObject,
+                                                                                            SPACE_Transparent,TRUE,
+                                                                                            SPACE_BevelStyle, BVS_NONE,
+                                                                                    End,
+                                                                                    CHILD_WeightedHeight, 0,
+                                                                        
+                                                                        End,
+                                                                    End,
+                                                End,
+                                                                   
+                                                LAYOUT_AddChild, SpaceObject,
+                                                            SPACE_Transparent,TRUE,
+                                                            SPACE_BevelStyle, BVS_NONE,
                                                 End,
 
                                                 // Buttons
 												LAYOUT_AddChild, HGroupObject,
 													
-                                                    LAYOUT_AddChild, co[13] = ButtonObject,
+                                                    LAYOUT_AddChild, gad[IDBCANCEL-1] = ButtonObject,
 															GA_Text, "_Cancel",
 															GA_RelVerify, TRUE,
 															GA_ID, IDBCANCEL,
@@ -1260,12 +1685,17 @@ void createPreferencesWin(void)
                                                             SPACE_BevelStyle, BVS_NONE,
                                                     End,
 
-													LAYOUT_AddChild, co[14] = ButtonObject,
+													LAYOUT_AddChild, gad[IDBSAVEANDCLOSE-1] = ButtonObject,
 															GA_Text, "_Save & Close",
 															GA_RelVerify, TRUE,
 															GA_ID, IDBSAVEANDCLOSE,
                                                     End,
 												End,
+
+                                                LAYOUT_AddChild, SpaceObject,
+                                                            SPACE_Transparent,TRUE,
+                                                            SPACE_BevelStyle, BVS_NONE,
+                                                End,
 
 											End
 	)))
@@ -1300,48 +1730,51 @@ void createPreferencesWin(void)
                     {                     
                         case IDBSAVEANDCLOSE:
 
-                            GetAttr(STRINGA_TextVal, co[0], (ULONG*)&vLocation);
+                            GetAttr(STRINGA_TextVal, gad[IDSTRINGLOCATION-1], (ULONG*)&vLocation);
                             sprintf(location, "%s", vLocation);
 
-                            GetAttr(CHOOSER_Selected, co[1], (ULONG*)&iUnit);
+                            GetAttr(CHOOSER_Selected, gad[IDINTEGERUNIT-1], (ULONG*)&iUnit);
                             sprintf(unit, "%s", iUnit==0 ? "metric":"imperial");
 
-                            GetAttr(CHOOSER_Selected, co[2], (ULONG*)&iLang);
+                            GetAttr(CHOOSER_Selected, gad[IDSTRINGLANGUAGE-1], (ULONG*)&iLang);
                             sprintf(lang, "%s", clanguages[iLang]);
                             strcpy(slang, lang);
                             slang[2]='\0';
 					        
-                            GetAttr(STRINGA_TextVal, co[3], (ULONG*)&vDays);
+                            GetAttr(STRINGA_TextVal, gad[IDSTRINGDAYS-1], (ULONG*)&vDays);
                             sprintf(days, "%s", vDays);
 
-                            GetAttr(STRINGA_TextVal, co[4], (ULONG*)&vMonths);
+                            GetAttr(STRINGA_TextVal, gad[IDSTRINGMONTHS-1], (ULONG*)&vMonths);
                             sprintf(months, "%s", vMonths);
 
-                            GetAttr(STRINGA_TextVal, co[5], (ULONG*)&vApikey);
+                            GetAttr(STRINGA_TextVal, gad[IDSTRINGAPIKEY-1], (ULONG*)&vApikey);
                             sprintf(apikey, "%s", vApikey);
 
-                            GetAttr(GA_Selected, co[6], &dIcon);
+                            GetAttr(GA_Selected, gad[IDCHECKBOXDISPLAYICON-1], &dIcon);
                             sprintf(displayIcon, dIcon ? "1":"0");
 
-                            GetAttr(GA_Selected, co[7], &dLocation);
+                            GetAttr(GA_Selected, gad[IDCHECKBOXDISPLAYLOCATION-1], &dLocation);
                             sprintf(displayLocation, dLocation ? "1":"0");
 
-                            GetAttr(GA_Selected, co[8], &dDescription);
+                            GetAttr(GA_Selected, gad[IDCHECKBOXDISPLAYDESCRIPTION-1], &dDescription);
                             sprintf(displayDescription, dDescription ? "1":"0");
 
-                            GetAttr(GA_Selected, co[9], &dDatetime);
+                            GetAttr(GA_Selected, gad[IDCHECKBOXDISPLAYDATETIME-1], &dDatetime);
                             sprintf(displayDateTime, dDatetime ? "1":"0");
 
-                            GetAttr(INTEGER_Number, co[10], &addX); 
-                            GetAttr(INTEGER_Number, co[11], &addY); 
-                            GetAttr(INTEGER_Number, co[12], &addH);
+                            GetAttr(INTEGER_Number, gad[IDINTEGERaddTextY-1], &addTextY);
 
-                            GetAttr(PALETTE_Colour, co[15], (ULONG*)&textColor);
-                            GetAttr(PALETTE_Colour, co[16], (ULONG*)&backgroundColor);
-                            GetAttr(PALETTE_Colour, co[17], (ULONG*)&sunColor);
-                            GetAttr(PALETTE_Colour, co[18], (ULONG*)&cloudColor);
-                            GetAttr(PALETTE_Colour, co[19], (ULONG*)&lcloudColor);
-                            GetAttr(PALETTE_Colour, co[20], (ULONG*)&dcloudColor);
+                            GetAttr(PALETTE_Colour, gad[IDPALETTETEXT-1], (ULONG*)&textColor);
+                            GetAttr(PALETTE_Colour, gad[IDPALETTEBACKGROUND-1], (ULONG*)&backgroundColor);
+                            GetAttr(PALETTE_Colour, gad[IDPALETTESUN-1], (ULONG*)&sunColor);
+                            GetAttr(PALETTE_Colour, gad[IDPALETTECLOUD-1], (ULONG*)&cloudColor);
+                            GetAttr(PALETTE_Colour, gad[IDPALETTELCLOUD-1], (ULONG*)&lcloudColor);
+                            GetAttr(PALETTE_Colour, gad[IDPALETTEDCLOUD-1], (ULONG*)&dcloudColor);
+
+                            GetAttr(PALETTE_Colour, gad[IDPALETTESTYLE-1], (ULONG*)&styleColor);
+                            GetAttr(PALETTE_Colour, gad[IDPALETTESHADOW-1], (ULONG*)&shadowColor);
+
+                            GetAttr(CHOOSER_Selected, gad[IDSTYLE-1], (ULONG*)&style);
 
                             // Controlling usage "," for days
                             Count = 0;
@@ -1418,7 +1851,7 @@ void createPreferencesWin(void)
                         break;
 
                         case IDGETMYDAYS:
-                            GetAttr(GA_Selected, co[24], &dAbbDays);
+                            GetAttr(GA_Selected, gad[IDCHECKBOXDAYS-1], &dAbbDays);
                             localDays=(dAbbDays)?0:7;
 
                             strcpy(td, "");
@@ -1427,11 +1860,11 @@ void createPreferencesWin(void)
                                 strcat(td, GetLocaleStr(currentLocale, x));
                                 if(x!=14-localDays) strcat(td, ",");
                             }
-                            SetGadgetAttrs(co[3], createPreferencesWin, NULL, STRINGA_TextVal, td, TAG_DONE); 
+                            SetGadgetAttrs(gad[IDSTRINGDAYS-1], createPreferencesWin, NULL, STRINGA_TextVal, td, TAG_DONE); 
                         break;
 
                         case IDGETMYMONTHS:
-                            GetAttr(GA_Selected, co[25], &dAbbMonths);
+                            GetAttr(GA_Selected, gad[IDCHECKBOXMONTHS-1], &dAbbMonths);
                             localMonths=(dAbbMonths)?0:12;
                             strcpy(tm, "");
                             for(x=27-localMonths;x<39-localMonths;x++)
@@ -1439,16 +1872,16 @@ void createPreferencesWin(void)
                                 strcat(tm, GetLocaleStr(currentLocale, x));
                                 if(x!=38-localMonths) strcat(tm, ",");
                             }
-                            SetGadgetAttrs(co[4], createPreferencesWin, NULL, STRINGA_TextVal, tm, TAG_DONE); 
+                            SetGadgetAttrs(gad[IDSTRINGMONTHS-1], createPreferencesWin, NULL, STRINGA_TextVal, tm, TAG_DONE); 
                         break;
                     
                         case IDGETMYLOCATION:
-                            if (fileExist("SYS:C/GetExtIP"))
+                            if (fileExist(GETEXTIP))
                             {
-                                SetGadgetAttrs(co[21], createPreferencesWin, NULL, GA_Disabled, TRUE, TAG_DONE);
-                                executeApp(GETEXTIP);
+                                SetGadgetAttrs(gad[IDGETMYLOCATION-1], createPreferencesWin, NULL, GA_Disabled, TRUE, TAG_DONE);
+                                executeApp(GETEXTIPRUN);
 
-                                fp = Open("RAM:T/ip.txt", MODE_OLDFILE);
+                                fp = Open(IPTXT, MODE_OLDFILE);
 	
                                 if (fp)
                                 {
@@ -1461,9 +1894,9 @@ void createPreferencesWin(void)
                                 {
 
                                     sprintf(ipapiurl, "http://ip-api.com/csv/%s", iptxt);
-                                    httpget(ipapiurl, "RAM:T/mylocation.txt");
+                                    httpget(ipapiurl, MYLOCTXT);
 
-                                    fp = Open("RAM:T/mylocation.txt", MODE_OLDFILE);
+                                    fp = Open(MYLOCTXT, MODE_OLDFILE);
                                     if(fp)
                                     {
                                         FGets(fp, locationCsv, sizeof(locationCsv));
@@ -1478,11 +1911,16 @@ void createPreferencesWin(void)
                                         strcpy(locationCsv, convertToLatin(locationData[5]));
                                         strcat(locationCsv,",");
                                         strcat(locationCsv, locationData[2]);
-                                        SetGadgetAttrs(co[0], createPreferencesWin, NULL, STRINGA_TextVal, locationCsv, TAG_DONE);  
+                                        SetGadgetAttrs(gad[IDSTRINGLOCATION-1], createPreferencesWin, NULL, STRINGA_TextVal, locationCsv, TAG_DONE);  
                                     }
                                 }
                                 
-                                SetGadgetAttrs(co[21], createPreferencesWin, NULL, GA_Disabled, FALSE, TAG_DONE);
+                                SetGadgetAttrs(gad[IDGETMYLOCATION-1], createPreferencesWin, NULL, GA_Disabled, FALSE, TAG_DONE);
+
+                                if (fileExist(IPTXT)||fileExist(MYLOCTXT))
+                                {
+                                    Execute("SYS:C/delete RAM:T/#?.txt >NIL:",NULL,NULL);
+                                }
                                 
 
                             }
@@ -1491,6 +1929,14 @@ void createPreferencesWin(void)
                                EasyRequest(Window, &GetExtIPMessage, NULL, NULL);
                             }
                             
+                        break;
+
+                        case IDSETTEXTPOSBUTTON:
+                            if(style==BAR) // if only bar style
+                            {
+                                GetAttr(INTEGER_Number, gad[IDINTEGERaddTextY-1], &addTextY);
+                                writeInfo();
+                            }
                         break;
 						
                         default:
@@ -1564,7 +2010,7 @@ void RemoveLineFromUserStartup(void)
 
     if (fileExist(COPIEDUSERSTARTUP))
     {
-        Execute("delete "COPIEDUSERSTARTUP" >NIL:",NULL,NULL);
+        Execute("SYS:C/delete "COPIEDUSERSTARTUP" >NIL:",NULL,NULL);
     }
     
 }

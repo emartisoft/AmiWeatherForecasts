@@ -10,13 +10,21 @@
 
      @{fg shine}AmiWeatherForecasts@{fg text}
 
-     This is a weather forecasting application that provides you with the latest weather information for any location. The application was built using the C programming language on Amiga OS 3.2 via SAS/C to retrieve weather information. This app provides weather forecast and time information on the right side of the title bar. The display of this information can be customized.
+     This is a weather forecasting application that provides you with the latest weather information for any location. The application was built using the C programming language on Amiga OS 3.2 via SAS/C to retrieve weather information. This app provides weather forecast and time information on the right side of the title bar. The display of this information can be customized. 
 
      Weather forecast information is updated every 15 minutes. If you don't want to wait, use the @{i}Tool/Update@{ui} menu to update immediately.
 
      It synchronizes the system time using sntp if avaliable an internet connection when executing firstly. Additionally, @{i}Tools/Set Date and Time Manually @{ui} and @{i}Sync system time using SNTP@{ui} menuitems can also be used.
 
      It has feature that finding of your location automatically. 
+
+     @{" Settings " Link "Settings"}
+
+     @{" About    " Link "About"}
+
+     @{" License  " Link "License"}
+     
+     @{" History  " Link "History"}
 
      @{b}Disclaimer@{ub}
 
@@ -29,14 +37,6 @@
      It uses APIs from ip-api.com to automatically find your location.
 
      Tested on OS3.2 only. It may be work on other WB.
-
-     @{" Settings " Link "Settings"}
-
-     @{" About    " Link "About"}
-
-     @{" License  " Link "License"}
-     
-     @{" History  " Link "History"}
 
 @EndNode
 
@@ -80,6 +80,7 @@
 
      @{b}DAYS@{ub}
      Enter the short day names with a comma between them for your language.
+     Or you may prefer to click to @{" Get Days " Link " "} button.
 
      for english:
      @{i}Sun,Mon,Tue,Wed,Thu,Fri,Sat @{ui}
@@ -88,11 +89,15 @@
      
      @{b}MONTHS@{ub}
      Enter the short month names with a comma between them for your language.
+     Or you may prefer to click to @{" Get Months " Link " "} button.
 
      for english:
      @{i}Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec @{ui}
      for turkish:
      @{i}Oca,Sub,Mar,Nis,May,Haz,Tem,Agu,Eyl,Eki,Kas,Ara @{ui}
+     
+     Note: You need to make Locale, Font and Palette settings from the System Prefs drawer.
+     In some cases it is necessary to reboot the Amiga.
 
      @{b}APIKEY@{ub}
      Obtain this from your OpenWeather account. [https://openweathermap.org/]
@@ -110,14 +115,14 @@
      [*] DISPLAYS DESCRIPTION
      [ ] DISPLAYS DATE & TIME
 
-     @{b}Position of the window@{ub}
-     Calibration setting for x and y position of the window.
+     @{b}Styles@{ub}
+     Bar, Iconic and Digital styles. Select the window and drag to the new position for all styles
 
-     @{b}Height of the window@{ub}
-     Calibration setting for height of the window.
+     @{b}Environment Variables@{ub}
+     Environment variables (CurrentTemperature, Location and WeatherDescription) for other applications to use
 
      @{b}Color Setting@{ub}
-     For Text, background, icon (sun, cloud)
+     For Text, background, icon (sun, cloud), style and shadow colors
 
 @EndNode
 
@@ -176,6 +181,23 @@
 
      @{fg shine}AmiWeatherForecasts History@{fg text}
 
+     @{b}1.5 (10.12.2023)@{ub}
+          - Added bar, digital and iconic styles
+          - Added select the window and drag to the new position for all styles
+          - Added environment variables (CurrentTemperature, Location and WeatherDescription) for other applications to use
+          - The application interface has been made more understandable using tabs
+     
+     @{b}1.4 (26.11.2023)@{ub}
+          - Encoding problem is solved
+          - Some languages removed
+          - Fixed any icons can be moved via drag and drop on WB
+          - Get Days and Months from locale
+          - Added use or not abbreviations for days and months
+          - Fixed the issue of color changes using system palette
+          - Removed calibration setting for height of the window
+          - Added 'Add to Pos Y of Text' button
+
+
      @{b}1.3 (17.11.2023)@{ub}
           - Using screen text font for GUI (Prefs/Font)
           - Added customize color settings
@@ -209,7 +231,6 @@
      @{fg shine}Languages@{fg text}
 
      ca:  Catalan
-     cz:  Czech
      da:  Danish
      de:  German
      en:  English
@@ -218,16 +239,10 @@
      fr:  French
      gl:  Galician
      it:  Italian
-     la:  Latvian
-     lt:  Lithuanian
      no:  Norwegian
      nl:  Dutch
-     pl:  Polish
      pt:  Portuguese
-     ro:  Romanian
      sv:  Swedish
-     sk:  Slovak
-     sl:  Slovenian
      sp:  Spanish
      tr:  Turkish
 

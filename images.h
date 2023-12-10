@@ -1,6 +1,7 @@
 /* AmiWeatherForecasts icons */
 #define ICONWIDTH   25
-
+#define ICONHEIGHT  10
+#define ICONCOUNT   10
 /*
 Colors:
 '*': text
@@ -11,7 +12,7 @@ Colors:
 '#': dark cloud
 */
 
-char images[240][ICONWIDTH]=
+char images[ICONHEIGHT*ICONCOUNT][ICONWIDTH]=
 {
     // clear sky
    
@@ -145,3 +146,5 @@ char images[240][ICONWIDTH]=
     "                        "
 
 };
+
+

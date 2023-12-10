@@ -34,6 +34,9 @@
 #include <gadgets/palette.h>
 #include <proto/space.h>
 #include <gadgets/space.h>
+#include <proto/clicktab.h>
+#include <gadgets/clicktab.h>
+
 
 #include <workbench/workbench.h>
 #include <proto/dos.h>
