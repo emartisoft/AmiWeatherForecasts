@@ -40,14 +40,12 @@ Else
         echo ""
         makedir SYS:Internet >NIL:
         makedir SYS:Internet/AmiWF >NIL:
-        makedir SYS:Internet/AmiWF/images >NIL:
         copy AmiWF.info SYS:Internet/ ALL QUIET
         copy AmiWeatherForecasts.info SYS:Internet/AmiWF/ ALL QUIET
         copy AmiWeatherForecasts SYS:Internet/AmiWF/ ALL QUIET
         echo " Copied AmiWeatherForecasts."
         copy AmiWeatherForecasts.guide.info SYS:Internet/AmiWF/ ALL QUIET
         copy AmiWeatherForecasts.guide SYS:Internet/AmiWF/ ALL QUIET
-	copy images/ SYS:Internet/AmiWF/images/ ALL QUIET
         echo " Copied AmiWeatherForecasts.guide."
         echo ""
         ask  " Please, press ENTER to continue."
