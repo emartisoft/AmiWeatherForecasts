@@ -391,6 +391,8 @@ BOOL getColorsFromWBPalette()
     // B=93 -> 9
     //
     // rgb4 color -> 0x0169
+
+    if(!fileExist(PREFPPALETTE)) executeApp("SYS:Prefs/Palette SAVE >NIL:");
     
     if((fp = fopen(PREFPPALETTE, "r")) == NULL) 
     {
