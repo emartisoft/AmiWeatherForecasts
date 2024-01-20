@@ -3,29 +3,33 @@ This is a weather forecasting application that provides you
 with the latest weather information for any location. 
 The application was built using the C programming language 
 on Amiga OS 3.2 via SAS/C to retrieve weather information. 
-This app provides weather forecast and time information on the 
-right side of the title bar. The display of this information 
-can be customized.
+
+Weather forecast information is updated every 15 minutes. 
+It synchronizes the system time using sntp,
+if avaliable an internet connection when executing firstly.
+Announce time and weather forecast via espeak app.
+It has feature that finding of your location automatically.
+For App's settings, Click to AmiWFPrefs In Prefs drawer.
+
+It sets Environment variables (CurrentTemperature, Location and 
+WeatherDescription)
+
+Tested on OS3.2 & OS3.9 only. It may be work on other WB.
 
 ![full](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/awf-pref.gif?raw=true)
 
-Weather forecast information is updated every 15 minutes. 
-If you don't want to wait, use the Tool/Update menu to update 
-immediately.
-
-It synchronizes the system time using sntp,
-if avaliable an internet connection when executing firstly.
-
-It has feature that finding of your location automatically.
-
-Tested on OS3.2 only. It may be work on other WB.
-
 License: MIT
-
-![full](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/main2.png?raw=true)
 
 Version History
 ===============
+1.6 (20.01.2024)
+- Added turkish catalog (if you can create 
+catalog for your language, contact to me on GitHUB)
+- Fixed black screen 
+- Added invisible style
+- Announce time and weather forecast via espeak app
+- For App's settings, Click to AmiWFPrefs In Prefs drawer.
+  
 1.5 (10.12.2023)
 - Added bar, digital and iconic styles
 - Added select the window and drag to the new position for all styles
