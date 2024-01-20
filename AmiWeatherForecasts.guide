@@ -30,9 +30,9 @@
 
      Use your own API key by making an account on OpenWeatherMap (https://openweathermap.org/)
 
-     SNTP (to sync system time) can be downloaded from aminet.net (http://aminet.net/package/comm/net/sntp)
-
-     GetExtIP can be downloaded from aminet.net (https://aminet.net/package/util/cli/GetExtIP)
+     SNTP (to sync system time) (http://aminet.net/package/comm/net/sntp),
+     GetExtIP (https://aminet.net/package/util/cli/GetExtIP) or
+     espeak application (https://aminet.net/package/util/sys/espeak) can be downloaded from aminet.net
 
      It uses APIs from ip-api.com to automatically find your location.
 
@@ -49,15 +49,9 @@
 
      After running the application, the window must be active in order to see the application menu. Click on the application located on the right side of the title bar with the left mouse button. If you hold down the right mouse button or click, the application menu will appear.
 
-     @{" AmiWeatherForecasts " Link ""}@{" Tools " Link ""}@{" Settings " Link ""}@{" Help " Link ""}
-     
-     From @{b}Settings/Add to User-Startup@{ub} menu item;
-     Each time your Amiga is booted, this application is executed.
+     @{" AmiWeatherForecasts " Link ""}@{" Tools " Link ""}@{" Help " Link ""}
 
-     From @{b}Settings/Remove from User-Startup@{ub} menu item;
-     It was removed command line from the User-Startup file to execute this application when startup your Amiga.
-
-     From @{b}Settings/Preferences@{ub} menu item;
+     For settings, click to AmiWFPrefs in Prefs drawer.
 
      @{b}LOCATION@{ub}
      Enter the city and country code in the format below. Or you may prefer to click to @{" Get My Location " Link " "} button.
@@ -77,6 +71,7 @@
      
      @{b}LANGUAGE@{ub}
      @{" Languages " Link "Languages"}
+     It does not change application language so If available catalog, change system language from Prefs/Locale.
 
      @{b}DAYS@{ub}
      Enter the short day names with a comma between them for your language.
@@ -116,13 +111,40 @@
      [ ] DISPLAYS DATE & TIME
 
      @{b}Styles@{ub}
-     Bar, Iconic and Digital styles. Select the window and drag to the new position for all styles
+     Bar, Iconic, Digital and invisible styles. Select the window and drag to the new position for all styles
 
      @{b}Environment Variables@{ub}
      Environment variables (CurrentTemperature, Location and WeatherDescription) for other applications to use
 
+     for Workbench title bar
+     =======================
+     %e CurrentTemperature %e Location %e WeatherDescription
+
+     for shell
+     =========
+     echo "Location           :"$Location
+     echo "Current Temperature:"$CurrentTemperature
+     echo "Weather Description:"$WeatherDescription
+
+     for C
+     =====
+     use function getenv().
+
+     #include <stdio.h>
+     #include <stdlib.h>
+
+     int main () {
+     char *locationVar;
+     locationVar = getenv("location");
+     printf("Location: %s\n", locationVar);
+     return 0;
+     }
+
      @{b}Color Setting@{ub}
      For Text, background, icon (sun, cloud), style and shadow colors
+
+     @{b}Announce@{ub}
+     No need to explain :)
 
 @EndNode
 
@@ -180,7 +202,15 @@
 @Toc "Main"
 
      @{fg shine}AmiWeatherForecasts History@{fg text}
-
+	 
+	@{b}1.6 (20.01.2024)@{ub}
+          - Added turkish catalog (if you can create 
+          catalog for your language, contact to me on GitHUB)
+          - Fixed black screen 
+          - Added invisible style
+          - Announce time and weather forecast via espeak app
+          - For App's settings, Click to AmiWFPrefs In Prefs drawer.
+		  
      @{b}1.5 (10.12.2023)@{ub}
           - Added bar, digital and iconic styles
           - Added select the window and drag to the new position for all styles
@@ -196,7 +226,6 @@
           - Fixed the issue of color changes using system palette
           - Removed calibration setting for height of the window
           - Added 'Add to Pos Y of Text' button
-
 
      @{b}1.3 (17.11.2023)@{ub}
           - Using screen text font for GUI (Prefs/Font)

@@ -1,11 +1,37 @@
-CC = sc
+# app names
+EXEFILES = AmiWeatherForecasts AmiWFPrefs
 
-LIBS = lib lib:sc.lib lib:amiga.lib lib:reaction.lib lib:httpget.lib lib:weather.lib lib:funcs.lib
+LINKER 	 = slink
+CC		 = sc
+LIBS	 = lib:sc.lib lib:amiga.lib lib:reaction.lib
+MYLIBS	 = lib:httpget.lib lib:weather.lib lib:funcs.lib lib:announce.lib
+STARTUP	 = lib:c.o
 
-main.o: main.c
-	$(CC) $< link $(LIBS) INCLUDEDIR=netinclude: to AmiWeatherForecasts
+# linker flags
+LFLAGS	= smallcode smalldata nodebug noicons stripdebug
+# compiler flags
+CFLAGS	= structureequivalence nostackcheck optimize IGNORE=73 IGNORE=225 IGNORE=51 IGNORE=100 IGNORE=304
+
+SRCDIR	 		= src/
+OBJFILES		= $(SRCDIR)main.o $(SRCDIR)common.o
+PREFOBJFILES	= $(SRCDIR)preferences.o $(SRCDIR)common.o
+
+all: $(EXEFILES)
+
+AmiWeatherForecasts: $(OBJFILES)
+	$(LINKER) FROM $(STARTUP) $(OBJFILES) LIB $(LIBS) $(MYLIBS) TO $@ $(LFLAGS)
+
+AmiWFPrefs: $(PREFOBJFILES)
+	$(LINKER) FROM $(STARTUP) $(PREFOBJFILES) LIB $(LIBS) $(MYLIBS) TO $@ $(LFLAGS)
+
+.c.o:
+	$(CC) $(CFLAGS) $*.c INCLUDEDIR=netinclude:
 
 clean:
-	delete \#?.o \#?.lnk \#?.map \#?.gst
+	@Delete $(EXEFILES) $(OBJFILES) $(PREFOBJFILES) quiet
 
- 
+cleanOBJ:
+	@Delete $(OBJFILES) $(PREFOBJFILES) quiet
+
+
+

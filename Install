@@ -2,8 +2,8 @@
 ; AmiWeatherForecasts Setup Script
 ; This file is part of AmiWeatherForecasts.
 ; AmiWeatherForecasts by emarti, Murat Ozdemir (C) 2023
-; Version: 1.2
-; Date: Nov 26, 2023
+; Version: 1.3
+; Date: Dec 31, 2023
 ;-----------------------------------------------
 
 echo "*e[>1m*e[32;41m*e[0;0H*e[J"
@@ -19,53 +19,56 @@ echo " for any location."
 echo ""
 echo " Read guide for more info."
 echo ""
-search >NIL: SYS:S/User-Startup "AmiWeatherForecasts"
-If not WARN
-    echo " WARNING:" 
-    echo " Please, remove AmiWeatherForecasts command-lines"
-    echo " from User-Startup file firstly before setup."
-    echo ""
-Else
-    echo " Do you want to install it?"
-    echo " Type 'Y'es to continue."
-    echo " Type 'N'o to exit the installation."
-    ask  " ? "
 
-    If WARN
-        cls
-        delete SYS:Prefs/Env-Archive/AmiWeatherForecasts.prefs >NIL:
-        echo ""
-        echo " Copying Files"
-        echo " -------------"
-        echo ""
-        makedir SYS:Internet >NIL:
-        makedir SYS:Internet/AmiWF >NIL:
-        copy AmiWF.info SYS:Internet/ ALL QUIET
-        copy AmiWeatherForecasts.info SYS:Internet/AmiWF/ ALL QUIET
-        copy AmiWeatherForecasts SYS:Internet/AmiWF/ ALL QUIET
-        echo " Copied AmiWeatherForecasts."
-        copy AmiWeatherForecasts.guide.info SYS:Internet/AmiWF/ ALL QUIET
-        copy AmiWeatherForecasts.guide SYS:Internet/AmiWF/ ALL QUIET
-        echo " Copied AmiWeatherForecasts.guide."
-        echo ""
-        ask  " Please, press ENTER to continue."
-        cls
-        echo ""
-        echo " Congratulations"
-        echo " ---------------"
-        echo " You have successfully installed AmiWeatherForecasts"
-        echo " in SYS:Internet/AmiWF drawer."
-        echo ""
-        echo " Enjoy it! Stay with the Amiga!"
-    Else
-        cls
-        echo ""
-        echo " AmiWeatherForecasts Setup"
-        echo " -------------------------"
-        echo ""
-        echo " The installation was canceled."
-    EndIf
+echo " Do you want to install it?"
+echo " Type 'Y'es to continue."
+echo " Type 'N'o to exit the installation."
+ask  " ? "
+
+If WARN
+    cls
+    delete SYS:Prefs/Env-Archive/AmiWeatherForecasts.prefs >NIL:
+    echo ""
+    echo " Copying Files"
+    echo " -------------"
+    echo ""
+    makedir SYS:Internet >NIL:
+    makedir SYS:Internet/AmiWF >NIL:
+    makedir SYS:Locale/catalogs/türkçe >NIL:
+    copy AmiWF.info SYS:Internet/ ALL QUIET
+    copy AmiWeatherForecasts.info SYS:Internet/AmiWF/ ALL QUIET
+    copy catalogs/türkçe.info SYS:Locale/Catalogs ALL QUIET
+    copy AmiWeatherForecasts SYS:Internet/AmiWF/ ALL QUIET
+    echo " Copied AmiWeatherForecasts."
+    copy AmiWFPrefs.info SYS:Prefs/ ALL QUIET
+    copy AmiWFPrefs SYS:Prefs/ ALL QUIET
+    echo " Copied AmiWFPrefs to Prefs drawer."
+    copy AmiWeatherForecasts.guide.info SYS:Internet/AmiWF/ ALL QUIET
+    copy AmiWeatherForecasts.guide SYS:Internet/AmiWF/ ALL QUIET
+    echo " Copied AmiWeatherForecasts.guide."
+    copy catalogs/türkçe/AmiWeatherForecasts.catalog SYS:Locale/Catalogs/türkçe ALL QUIET
+    echo " Copied catalogs."
+    echo ""
+    ask  " Please, press ENTER to continue."
+    cls
+    echo ""
+    echo " Congratulations"
+    echo " ---------------"
+    echo " You have successfully installed AmiWeatherForecasts"
+    echo " in SYS:Internet/AmiWF drawer."
+    echo ""
+    echo " For settings, use AmiWFPrefs in Prefs drawer"
+    echo ""
+    echo " Enjoy it! Stay with the Amiga!"
+Else
+    cls
+    echo ""
+    echo " AmiWeatherForecasts Setup"
+    echo " -------------------------"
+    echo ""
+    echo " The installation was canceled."
 EndIf
+
 echo ""
 ask  " Please, press ENTER to exit."
 EndShell
