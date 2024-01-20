@@ -1,0 +1,12 @@
+How to
+======
+
+;create CTFILE from CDFILE
+catcomp AmiWeatherForecasts_locale.cd CTFILE AmiWeatherForecasts_locale.ct
+
+From shell
+1. Copy AmiWeatherForecasts_locale.ct to AmiWeatherForecasts_<YOURLANGUAGE>.ct
+2. TextEdit AmiWeatherForecasts_<YOURLANGUAGE>.ct
+3. ccomp AmiWeatherForecasts_locale.cd AmiWeatherForecasts_<YOURLANGUAGE>.ct <YOURLANGUAGE>/AmiWeatherForecasts.catalog
+
+ps: ccmop does not create drawer automatically. You make it manually.

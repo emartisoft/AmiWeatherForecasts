@@ -1,0 +1,404 @@
+## version $VER: XX.catalog XX.XX (XX.XX.XX)
+## codeset X
+## language X
+;
+str_29
+
+; About
+;
+str_30
+
+; Quit
+;
+str_31
+
+; Update Weather Forecast
+;
+str_32
+
+; Set Date and Time Manually
+;
+str_33
+
+; Sync System Time using SNTP
+;
+str_37
+
+; Manual
+;
+str_39
+
+; A
+;
+str_40
+
+; Q
+;
+str_41
+
+; Tools
+;
+str_42
+
+; U
+;
+str_45
+
+; Help
+;
+str_46
+
+; M
+;
+str_48
+
+; Ok
+;
+str_77
+
+; About
+;
+str_78
+
+; Warning;
+;
+str_79
+
+; SNTP not found in SYS:C drawer. Download it from Aminet.net.\nSystem time could not be synchronized.
+;
+str_82
+
+; Info;
+;
+str_93
+
+; Days & Months
+;
+str_94
+
+; Display
+;
+str_95
+
+; Colors
+;
+str_96
+
+; Position & Style
+;
+str_97
+
+; ENV Variables
+;
+str_98
+
+; API Key
+;
+str_99
+
+; Preferences - AmiWeatherForecasts
+;
+str_100
+
+; _Get My Location
+;
+str_101
+
+;   Location ;
+;
+str_102
+
+;       Unit ;
+;
+str_103
+
+;   Language ;
+;
+str_104
+
+;       Days ;
+;
+str_105
+
+; Get _Days
+;
+str_106
+
+; Use long abbreviations for days     ;
+;
+str_108
+
+;     Months ;
+;
+str_109
+
+; Get _Months
+;
+str_110
+
+; Use months of the year abbreviations
+;
+str_111
+
+;  Position Y of the text ;
+;
+str_112
+
+;  Set Position ;
+;
+str_113
+
+; Displays icon       ;
+;
+str_114
+
+; Displays location   ;
+;
+str_115
+
+; Displays description
+;
+str_116
+
+; Displays date & time
+;
+str_117
+
+; If desired to change colors, use Prefs/Palette.
+;
+str_118
+
+;        Note ;
+;
+str_119
+
+;        Text ;
+;
+str_120
+
+;  Background ;
+;
+str_121
+
+;         Sun ;
+;
+str_122
+
+;       Cloud ;
+;
+str_123
+
+; Light Cloud ;
+;
+str_124
+
+;  Dark Cloud ;
+;
+str_125
+
+;       Style ;
+;
+str_126
+
+;      Shadow ;
+;
+str_127
+
+; Select the window and drag to the new position
+;
+str_128
+
+;  Position ;
+;
+str_129
+
+;     Style ;
+;
+str_130
+
+; Environment variables for weather forecast data
+;
+str_134
+
+; Use your own OpenWeather API key
+;
+str_135
+
+;       Note ;
+;
+str_136
+
+;     APIKEY ;
+;
+str_137
+
+; _Close
+;
+str_138
+
+; _Save
+;
+str_139
+
+; There must be 6 comma characters between the days.\nPlease, try again.
+;
+str_140
+
+; There must be 11 comma characters between the months.\nPlease, try again.
+;
+str_141
+
+; Except Style and Shadow, Your color choices must be different from each other.\nPlease, try again.
+;
+str_145
+
+; GetExtIP not found in SYS:C drawer. Download it from Aminet.net.
+;
+str_200
+
+; On the hour
+;
+str_201
+
+; On the half hour
+;
+str_202
+
+; On the quarter hour
+;
+str_203
+
+; Normal
+;
+str_204
+
+; Announce
+;
+str_205
+
+; This app is used amiga-port of espeak speech synthesizer
+;
+str_206
+
+;         Info ;
+;
+str_207
+
+; Select espeak application ...
+;
+str_208
+
+;   espeak App ;
+;
+str_209
+
+; Test
+;
+str_210
+
+; Announce the time (available for turkish, german, french and english only)
+;
+str_211
+
+; Announce the weather forecast in the following text format
+;
+str_212
+
+;  Text Format ;
+;
+str_213
+
+;       Voices ;
+;
+str_214
+
+;        Speed ;
+;
+str_215
+
+;     Announce ;
+;
+str_216
+
+; Run automatically at startup
+;
+str_217
+
+; _Restore Defaults
+;
+str_218
+
+; Are you sure?
+;
+str_219
+
+; Are you sure to restore defaults?
+;
+str_220
+
+; Yes|No
+;
+str_221
+
+; Error
+;
+str_222
+
+; eSpeak app not found
+;
+str_300
+
+; Male 1
+;
+str_301
+
+; Male 2
+;
+str_302
+
+; Male 3
+;
+str_303
+
+; Male 4
+;
+str_304
+
+; Male 5
+;
+str_305
+
+; Male 6
+;
+str_306
+
+; Male 7
+;
+str_307
+
+; Female 1
+;
+str_308
+
+; Female 2
+;
+str_309
+
+; Female 3
+;
+str_310
+
+; Female 4
+;
+str_311
+
+; Female 5
+;
+str_312
+
+; Whisper + Male
+;
+str_313
+
+; Whisper + Female
+;

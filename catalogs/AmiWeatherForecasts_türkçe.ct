@@ -1,0 +1,408 @@
+## version $VER: AmiWeatherForecasts.catalog 1.0 (31.12.23)
+## language türkçe
+;
+str_29
+Hakkýnda
+; About
+;
+str_30
+Çýkýþ
+; Quit
+;
+str_31
+Hava tahmin verilerini güncelle
+; Update Weather Forecast
+;
+str_32
+Tarih ve zamaný ayarla
+; Set Date and Time Manually
+;
+str_33
+SNTP ile sistem zamanýný sunucudan eþitle 
+; Sync System Time using SNTP
+;
+str_37
+Kullaným rehberi
+; Manual
+;
+str_39
+H
+; A
+;
+str_40
+C
+; Q
+;
+str_41
+Araçlar
+; Tools
+;
+str_42
+G
+; U
+;
+str_45
+Yardým
+; Help
+;
+str_46
+K
+; M
+;
+str_48
+Tamam
+; Ok
+;
+str_77
+Hakkýnda
+; About
+;
+str_78
+Dikkat
+; Warning
+;
+str_79
+SNTP, SYS:C çekmecesinde bulunamadý. Aminet.net üzerinden indirilebilir.\nSistem zamaný eþitlenemedi.
+; SNTP not found in SYS:C drawer. Download it from Aminet.net.\
+; \nSystem time could not be synchronized.
+;
+str_82
+Bilgi
+; Info
+;
+str_93
+Günler & Aylar
+; Days & Months
+;
+str_94
+Görünüm
+; Display
+;
+str_95
+Renkler
+; Colors
+;
+str_96
+Pozisyon & Stil
+; Position & Style
+;
+str_97
+ENV Deðiþkenleri
+; ENV Variables
+;
+str_98
+API Anahtarý
+; API Key
+;
+str_99
+Tercihler - AmiWeatherForecasts
+; Preferences
+;
+str_100
+Konumumu _Bul
+; _Get My Location
+;
+str_101
+      Konum 
+;   Location \
+;
+str_102
+Ölçü Birimi 
+;       Unit \
+;
+str_103
+        Dil 
+;   Language \
+;
+str_104
+    Günler 
+;       Days \
+;
+str_105
+Günleri Yaz
+; Get _Days
+;
+str_106
+Günler için uzun kýsaltmalarý kullan
+; Use long abbreviations for days
+;
+str_108
+     Aylar 
+;     Months \
+;
+str_109
+Aylarý Yaz
+; Get _Months
+;
+str_110
+Aylar için kýsaltmalarý kullan      
+; Use months of the year abbreviations
+;
+str_111
+Yazýnýn Y pozisyonu 
+;  Position Y of the text \
+;
+str_112
+Pozisyon Ayarla
+;  Set Position \
+;
+str_113
+Simgeyi göster      
+; Displays icon       \
+;
+str_114
+Konumu göster       
+; Displays location   \
+;
+str_115
+Açýklamayý göster   
+; Displays description
+;
+str_116
+Tarih & zamaný göster
+; Displays date & time
+;
+str_117
+Renkleri deðiþtirmek istersen, Prefs/Palette'i kullan.
+; If desired to change colors, use Prefs/Palette.
+;
+str_118
+        Not 
+;        Note \
+;
+str_119
+       Yazý 
+;        Text \
+;
+str_120
+   Arkaplan 
+;  Background \
+;
+str_121
+      Güneþ 
+;         Sun \
+;
+str_122
+      Bulut 
+;       Cloud \
+;
+str_123
+ Açýk Bulut 
+; Light Cloud \
+;
+str_124
+ Koyu Bulut 
+;  Dark Cloud \
+;
+str_125
+       Stil 
+;       Style \
+;
+str_126
+      Gölge 
+;      Shadow \
+;
+str_127
+Yeni pozisyon için pencereyi seç ve sürükle
+; Select the window and drag to the new position
+;
+str_128
+ Pozisyon 
+;  Position \
+;
+str_129
+     Stil 
+;     Style \
+;
+str_130
+Hava tahmini verileri için ortam deðiþkenleri
+; Environment variables for weather forecast data
+;
+str_134
+Kendi hesabýna ait OpenWeather API anahtarýný kullan
+; Use your own OpenWeather API key
+;
+str_135
+       Not 
+;       Note \
+;
+str_136
+    APIKEY 
+;     APIKEY \
+;
+str_137
+Kapa_t
+; _Close
+;
+str_138
+_Kaydet
+; _Save
+;
+str_139
+Günler arasýnda 6 virgül olmalý. Lütfen, tekrar deneyiniz.
+; There must be 6 comma characters between the days.\nPlease, \
+; try again.
+;
+str_140
+Aylar arasýnda 11 virgül olmalý. Lütfen, tekrar deneyiniz.
+; There must be 11 comma characters between the months.\nPleas\
+; e, try again.
+;
+str_141
+Gölge ve stil rengi hariç herbiri farklý renkte olmalýdýr\nLütfen, tekrar deneyiniz.
+; Your color choices must be different from each other.\nPleas\
+; e, try again.
+;
+str_145
+GetExtIP, SYS;C çekmecesinde bulunamadý. Aminet.net üzerinden indirilebilir.
+; GetExtIP not found in SYS:C drawer. Download it from Aminet.\
+; net.
+;
+str_200
+Saat baþý
+; On the hour
+;
+str_201
+Yarým saatte
+; On the half hour
+;
+str_202
+Çeyrek saatte
+; On the quarter hour
+;
+str_203
+Normal
+; Normal
+;
+str_204
+Anons
+; Announce
+;
+str_205
+Bu uygulama espeak konuþma sentezleyicisini kullanýr
+; This app is used amiga-port of espeak speech synthesizer
+;
+str_206
+        Bilgi 
+;         Info ;
+;
+str_207
+espeak Uygulamasýný seç...
+; Select espeak application ...
+;
+str_208
+   espeak Prg 
+;   espeak App ;
+;
+str_209
+Test
+; Test
+;
+str_210
+Saati anons et (Türkçe, Almanca, Ýngilizce ve Fransýzca için mevcut)
+; Announce the time (available for turkish, german, french and english only)
+;
+str_211
+Hava durumunu aþaðýdaki formatta anons et
+; Announce the weather forecast in the following text format
+;
+str_212
+Anons Formatý 
+;  Text Format ;
+;
+str_213
+       Sesler 
+;       Voices ;
+;
+str_214
+          Hýz 
+;        Speed ;
+;
+str_215
+ Anons Zamaný 
+; Announce Time;
+;
+str_216
+Açýlýþta otomatik çalýþtýr
+; Run automatically at startup
+;
+str_217
+Varsayýlaný Geri _Yükle
+; _Restore Defaults
+;
+str_218
+Emin misin?
+; Are you sure?
+;
+str_219
+Varsayýlaný geri yüklemek istediðine emin misin?
+; Are you sure to restore defaults?
+;
+str_220
+Evet|Hayýr
+; Yes|No
+;
+str_221
+Hata
+; Error
+;
+str_222
+espeak prg bulunamadý
+; eSpeak app not found
+;
+str_300
+Erkek 1
+; Male 1
+;
+str_301
+Erkek 2
+; Male 2
+;
+str_302
+Erkek 3
+; Male 3
+;
+str_303
+Erkek 4
+; Male 4
+;
+str_304
+Erkek 5
+; Male 5
+;
+str_305
+Erkek 6
+; Male 6
+;
+str_306
+Erkek 7
+; Male 7
+;
+str_307
+Kadýn 1
+; Female 1
+;
+str_308
+Kadýn 2
+; Female 2
+;
+str_309
+Kadýn 3
+; Female 3
+;
+str_310
+Kadýn 4
+; Female 4
+;
+str_311
+Kadýn 5
+; Female 5
+;
+str_312
+Fýsýltý + Erkek
+; Whisper + Male
+;
+str_313
+Fýsýltý + Kadýn
+; Whisper + Female
+;

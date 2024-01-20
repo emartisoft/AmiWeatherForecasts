@@ -1,0 +1,331 @@
+str_29 (0//10)
+About
+;
+str_30 (1//8)
+Quit
+;
+str_31 (2//46)
+Update Weather Forecast
+;
+str_32 (3//52)
+Set Date and Time Manually
+;
+str_33 (4//54)
+Sync System Time using SNTP
+;
+str_37 (8//32)
+Manual
+;
+str_39 (9//2)
+A
+;
+str_40 (10//2)
+Q
+;
+str_41 (11//10)
+Tools
+;
+str_42 (12//2)
+U
+;
+str_45 (15//8)
+Help
+;
+str_46 (16//2)
+M
+;
+str_48 (17//10)
+Ok
+;
+str_77 (18//32)
+About
+;
+;
+str_78 (19//64)
+Warning\
+;
+;
+str_79 (20//200)
+SNTP not found in SYS:C drawer. Download it from Aminet.net.\
+\nSystem time could not be synchronized.
+;
+str_82 (22//56)
+Info\
+;
+;
+str_93 (26//26)
+Days & Months
+;
+str_94 (27//14)
+Display
+;
+str_95 (28//12)
+Colors
+;
+str_96 (29//32)
+Position & Style
+;
+str_97 (30//26)
+ENV Variables
+;
+str_98 (31//14)
+API Key
+;
+str_99 (32//66)
+Preferences - AmiWeatherForecasts
+;
+str_100 (33//32)
+_Get My Location
+;
+str_101 (34//32)
+  Location \
+;
+;
+str_102 (35//32)
+      Unit \
+;
+;
+str_103 (36//32)
+  Language \
+;
+;
+str_104 (37//32)
+      Days \
+;
+;
+str_105 (38//18)
+Get _Days
+;
+str_106 (39//72)
+Use long abbreviations for days     \
+;
+;
+str_108 (40//32)
+    Months \
+;
+;
+str_109 (41//22)
+Get _Months
+;
+str_110 (42//72)
+Use months of the year abbreviations
+;
+str_111 (43//48)
+ Position Y of the text \
+;
+;
+str_112 (44//28)
+ Set Position \
+;
+;
+str_113 (45//48)
+Displays icon       \
+;
+;
+str_114 (46//48)
+Displays location   \
+;
+;
+str_115 (47//48)
+Displays description
+;
+str_116 (48//48)
+Displays date & time
+;
+str_117 (49//94)
+If desired to change colors, use Prefs/Palette.
+;
+str_118 (50//32)
+       Note \
+;
+;
+str_119 (51//32)
+       Text \
+;
+;
+str_120 (52//32)
+ Background \
+;
+;
+str_121 (53//32)
+        Sun \
+;
+;
+str_122 (54//32)
+      Cloud \
+;
+;
+str_123 (55//32)
+Light Cloud \
+;
+;
+str_124 (56//32)
+ Dark Cloud \
+;
+;
+str_125 (57//32)
+      Style \
+;
+;
+str_126 (58//32)
+     Shadow \
+;
+;
+str_127 (59//92)
+Select the window and drag to the new position
+;
+str_128 (60//24)
+ Position \
+;
+;
+str_129 (61//24)
+    Style \
+;
+;
+str_130 (62//94)
+Environment variables for weather forecast data
+;
+str_134 (63//64)
+Use your own OpenWeather API key
+;
+str_135 (64//32)
+      Note \
+;
+;
+str_136 (65//32)
+    APIKEY \
+;
+;
+str_137 (66//14)
+_Close
+;
+str_138 (67//14)
+_Save
+;
+str_139 (68//140)
+There must be 6 comma characters between the days.\nPlease, \
+try again.
+;
+str_140 (69//146)
+There must be 11 comma characters between the months.\nPleas\
+e, try again.
+;
+str_141 (70//146)
+Except Style and Shadow, Your color choices must be different from each other.\nPleas\
+e, try again.
+;
+str_145 (71//128)
+GetExtIP not found in SYS:C drawer. Download it from Aminet.\
+net.
+;
+str_200 (72//22)
+On the hour
+;
+str_201 (73//32)
+On the half hour
+;
+str_202 (74//38)
+On the quarter hour
+;
+str_203 (78//12)
+Normal
+;
+str_204 (79//16)
+Announce
+;
+str_205 (80//112)
+This app is used amiga-port of espeak speech synthesizer
+;
+str_206 (81//26)
+        Info \
+;
+str_207 (82//58)
+Select espeak application ...
+;
+str_208 (83//26)
+  espeak App \
+;
+str_209 (84//10)
+Test
+;
+str_210 (85//148)
+Announce the time (available for turkish, german, french and english only)
+;
+str_211 (86//118)
+Announce the weather forecast in the following text format
+;
+str_212 (87//26)
+ Text Format \
+;
+str_213 (88//26)
+      Voices \
+;
+str_214 (89//26)
+       Speed \
+;
+str_215 (90//26)
+Announce Time\
+;
+str_216 (91//80)
+Run automatically at startup
+;
+str_217 (92//34)
+_Restore Defaults
+;
+str_218 (93//26)
+Are you sure?
+;
+str_219 (94//66)
+Are you sure to restore defaults?
+;
+str_220 (95//14)
+Yes|No
+;
+str_221 (96//14)
+Error
+;
+str_222 (97//44)
+eSpeak app not found
+;
+str_300 (100//18)
+Male 1
+;
+str_301 (101//18)
+Male 2
+;
+str_302 (102//18)
+Male 3
+;
+str_303 (103//18)
+Male 4
+;
+str_304 (104//18)
+Male 5
+;
+str_305 (105//18)
+Male 6
+;
+str_306 (106//18)
+Male 7
+;
+str_307 (107//20)
+Female 1
+;
+str_308 (108//20)
+Female 2
+;
+str_309 (109//20)
+Female 3
+;
+str_310 (110//20)
+Female 4
+;
+str_311 (111//20)
+Female 5
+;
+str_312 (112//52)
+Whisper + Male
+;
+str_313 (113//52)
+Whisper + Female
+;
