@@ -16,7 +16,7 @@ WeatherDescription)
 
 Tested on OS3.2 & OS3.9 only. It may be work on other WB.
 
-![full](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/awf-pref.gif?raw=true)
+![full](https://github.com/emartisoft/AmiWeatherForecasts/blob/main/screenshots/main_1.6.png?raw=true)
 
 License: MIT
 
