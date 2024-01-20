@@ -529,20 +529,20 @@ void createPreferencesWin(void)
         WA_Activate,              TRUE,
         WA_DragBar,               TRUE,
         WA_CloseGadget,           TRUE,
-		WA_SizeGadget, 			  FALSE,
+		WA_SizeGadget, 			  TRUE,
         WA_SmartRefresh,          TRUE,
-        WA_MinWidth,              400,
-        WA_MinHeight,             60,
-        WA_MaxWidth,              400,
-        WA_MaxHeight,             60,
-        WA_InnerWidth,            400,
-        WA_InnerHeight,           60,
+        //WA_MinWidth,              300,
+        //WA_MinHeight,             50,
+       // WA_MaxWidth,              400,
+       // WA_MaxHeight,             60,
+        //WA_InnerWidth,            300,
+        //WA_InnerHeight,           50,
        // WA_Left,                  0,
        // WA_Top,                   0,
        // WA_Width,                 400,
        // WA_Height,                200,
         WA_SizeBRight,            FALSE,
-        WA_SizeBBottom,           FALSE,
+        WA_SizeBBottom,           TRUE,
        // WA_NewLookMenus,          TRUE,
         WINDOW_Position,          WPOS_CENTERSCREEN,
 		WINDOW_ParentGroup,       vcreatePreferencesParent = VGroupObject,
@@ -667,6 +667,8 @@ void createPreferencesWin(void)
                                                                                             GA_RelVerify, TRUE,
                                                                                             GA_ID, IDTESTBUTTON,
                                                                                     End,
+                                                                                    //CHILD_WeightedWidth,        0,
+                                                                                    CHILD_WeightedHeight,       0,
                                                                                 End,
 
                                                                                 LAYOUT_AddChild, gad[IDCHECKBOXANTIME-1] = (struct Gadget *) CheckBoxObject,
@@ -785,6 +787,7 @@ void createPreferencesWin(void)
                                                                                                     LABEL_SoftStyle, FSF_BOLD,
                                                                                                     LABEL_Text, str_104,
                                                                                     End,
+                                                                                    
 
                                                                                     // Get days and months
                                                                                     LAYOUT_AddChild, HGroupObject,
@@ -793,6 +796,8 @@ void createPreferencesWin(void)
                                                                                                 GA_RelVerify, TRUE,
                                                                                                 GA_ID, IDGETMYDAYS,
                                                                                         End,
+                                                                                        //CHILD_WeightedWidth,        0,
+                                                                                        CHILD_WeightedHeight,       0,
 
                                                                                         LAYOUT_AddChild, gad[IDCHECKBOXDAYS-1] = (struct Gadget *) CheckBoxObject,
                                                                                                                     GA_ID, IDCHECKBOXDAYS,
@@ -804,6 +809,8 @@ void createPreferencesWin(void)
                                                                                                                     CHECKBOX_BackgroundPen, 0,
                                                                                                                     CHECKBOX_TextPlace, PLACETEXT_RIGHT,
                                                                                         End,
+
+                                                                                        
 
                                                                                     End,
                                                                                     CHILD_Label,  LabelObject,
@@ -836,6 +843,8 @@ void createPreferencesWin(void)
                                                                                                 GA_RelVerify, TRUE,
                                                                                                 GA_ID, IDGETMYMONTHS,
                                                                                         End,
+                                                                                        //CHILD_WeightedWidth,        0,
+                                                                                        CHILD_WeightedHeight,       0,
 
                                                                                         LAYOUT_AddChild, gad[IDCHECKBOXMONTHS-1] = (struct Gadget *) CheckBoxObject,
                                                                                                                     GA_ID, IDCHECKBOXMONTHS,
@@ -887,6 +896,7 @@ void createPreferencesWin(void)
                                                                                                 GA_RelVerify, TRUE,
                                                                                                 GA_ID, IDSETTEXTPOSBUTTON,
                                                                                         End,
+                                                                                        CHILD_WeightedHeight,       0,
                                                                                     End,
 
                                                                                     // Displays icon
