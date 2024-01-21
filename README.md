@@ -23,6 +23,7 @@ License: MIT
 Version History
 ===============
 1.6 (20.01.2024)
+- Added german catalog (Thanks to halle-saale from Amiganews.de)
 - Added turkish catalog (if you can create 
 catalog for your language, contact to me on GitHUB)
 - Fixed black screen 
