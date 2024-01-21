@@ -1,0 +1,403 @@
+## version $VER: AmiWeatherForecasts.catalog 1.0 (31.12.23)
+## language deutsch
+;
+str_29
+Über
+; About
+;
+str_30
+Beenden
+;
+;
+str_31
+Weather Forecast aktualisieren
+;
+;
+str_32
+Datum und Zeit einstellen
+;
+;
+str_33
+Systemzeit mit SNTP einstellen
+;
+;
+str_37
+Anleitung
+;
+;
+str_39
+A
+;
+;
+str_40
+Q
+;
+;
+str_41
+Werkzeuge
+;
+;
+str_42
+U
+;
+;
+str_45
+Hilfe
+;
+;
+str_46
+M
+;
+;
+str_48
+Ok
+;
+;
+str_77
+Über
+;
+;
+str_78
+Warnung
+;
+;
+str_79
+SNTP liegt nicht im Ordner SYS:C. Lade es von Aminet.net herunter.\nSystemzeit konnte nicht gesetzt werden.
+;
+;
+str_82
+Info
+;
+;
+str_93
+Tage & Monate
+;
+;
+str_94
+Anzeige
+;
+;
+str_95
+Farben
+;
+;
+str_96
+Position & Stil
+;
+;
+str_97
+ENV Variablen
+;
+;
+str_98
+API Key
+;
+;
+str_99
+Einstellungen - AmiWeatherForecasts
+;
+;
+str_100
+_Holen Sie sich meinen Standort
+;
+;
+str_101
+        Ort 
+;
+;
+str_102
+    Einheit 
+;
+;
+str_103
+    Sprache 
+;
+;
+str_104
+      Tage 
+;
+;
+str_105
+Holen Sie sich _Tage
+;
+;
+str_106
+Lange Abkürzungen für Tage verwenden        
+;
+;
+str_108
+    Monate 
+;
+;
+str_109
+Holen Sie sich _Monate
+;
+;
+str_110
+Monate im Jahr für die Abkürzungen verwenden
+;
+;
+str_111
+ Position Y des Textes
+;
+;
+str_112
+ Position setzen 
+;
+;
+str_113
+Icons der Anzeige
+;
+;
+str_114
+Anzeige des Ortes
+;
+;
+str_115
+Beschreibung der Anzeige
+;
+;
+str_116
+Anzeigen von Datum & Zeit
+;
+;
+str_117
+Änderung der Farben unter Prefs/Palette.
+;
+;
+str_118
+    Anmerkung 
+;
+;
+str_119
+         Text 
+;
+;
+str_120
+  Hintergrund 
+;
+;
+str_121
+        Sonne 
+;
+;
+str_122
+       Wolken 
+;
+;
+str_123
+ Helle Wolken 
+;
+;
+str_124
+Dunkle Wolken 
+;
+;
+str_125
+         Stil 
+;
+;
+str_126
+     Schatten 
+;
+;
+str_127
+Fenster auswählen und zur neuen Position ziehen
+;
+;
+str_128
+ Position 
+;
+;
+str_129
+     Stil 
+;
+;
+str_130
+Umgebungsvariablen für die Wettervorhersage
+;
+;
+str_134
+Verwende einen eigenen OpenWeather API Key
+;
+;
+str_135
+      Note 
+;
+;
+str_136
+    APIKEY 
+;
+;
+str_137
+S_chließen
+;
+;
+str_138
+_Speichern
+;
+;
+str_139
+Zwischen den Tagen müssen 6 Zeichen stehen.\nBitte erneut versuchen.
+;
+;
+str_140
+Zwischen den Monaten müssen 11 Zeichen stehen.\nBitte erneut versuchen.
+;
+;
+str_141
+Mit Ausnahme von Stil und Schattierung muss sich Ihre Farbauswahl voneinander unterscheiden.\nBitte erneut versuchen.
+;
+;
+str_145
+GetExtIP liegt nicht im Ordner SYS:C. Von Aminet.net herunterladen.
+;
+;
+str_200
+Zur vollen Stunde
+;
+;
+str_201
+Zur halben Stunde
+;
+;
+str_202
+Zur Viertel Stunde
+;
+;
+str_203
+Normal
+;
+;
+str_204
+Bekanntgeben
+;
+;
+str_205
+Dieses Tool verwendet den Amiga-port von espeak Sprachsynthesizers
+;
+;
+str_206
+             Info 
+;
+;
+str_207
+Wähle die espeak Anwendung ...
+;
+;
+str_208
+       espeak App 
+;
+;
+str_209
+Prüfen
+;
+;
+str_210
+die Zeit ankündigen (nur für Türkisch, Deutsch, Französisch und Englisch verfügbar)
+;
+;
+str_211
+Geben Sie die Wettervorhersage in folgendem Textformat bekannt
+;
+;
+str_212
+       Textformat 
+;
+;
+str_213
+          Stimmen 
+;
+;
+str_214
+  Geschwindigkeit 
+;
+;
+str_215
+     Bekanntgeben 
+;
+;
+str_216
+Automatisch eim Start ausführen
+;
+;
+str_217
+Standardeinstellungen _wiederherstellen
+;
+;
+str_218
+Bist du sicher?
+;
+;
+str_219
+Möchtest du auf die Standardeinstellungen zurücksetzen?
+;
+;
+str_220
+Ja|Nein
+;
+;
+str_221
+Fehler
+;
+;
+str_222
+eSpeak-Anwendung nicht gefunden
+;
+;
+str_300
+Männlich 1
+;
+;
+str_301
+Männlich 2
+;
+;
+str_302
+Männlich 3
+;
+;
+str_303
+Männlich 4
+;
+;
+str_304
+Männlich 5
+;
+;
+str_305
+Männlich 6
+;
+;
+str_306
+Männlich 7
+;
+;
+str_307
+Weiblich 1
+;
+;
+str_308
+Weiblich 2
+;
+;
+str_309
+Weiblich 3
+;
+;
+str_310
+Weiblich 4
+;
+;
+str_311
+Weiblich 5
+;
+;
+str_312
+Flüstern + Männlich
+;
+;
+str_313
+Flüstern + Weiblich
+;
+;

@@ -93,7 +93,7 @@ str_104 (37//32)
       Days \
 ;
 ;
-str_105 (38//18)
+str_105 (38//28)
 Get _Days
 ;
 str_106 (39//72)
@@ -269,7 +269,7 @@ Announce Time\
 str_216 (91//80)
 Run automatically at startup
 ;
-str_217 (92//34)
+str_217 (92//64)
 _Restore Defaults
 ;
 str_218 (93//26)
