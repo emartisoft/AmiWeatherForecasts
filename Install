@@ -35,6 +35,7 @@ If WARN
     makedir SYS:Internet >NIL:
     makedir SYS:Internet/AmiWF >NIL:
     makedir SYS:Locale/catalogs/türkçe >NIL:
+    makedir SYS:Locale/catalogs/deutsch >NIL:
     copy AmiWF.info SYS:Internet/ ALL QUIET
     copy AmiWeatherForecasts.info SYS:Internet/AmiWF/ ALL QUIET
     copy catalogs/türkçe.info SYS:Locale/Catalogs ALL QUIET
@@ -47,6 +48,7 @@ If WARN
     copy AmiWeatherForecasts.guide SYS:Internet/AmiWF/ ALL QUIET
     echo " Copied AmiWeatherForecasts.guide."
     copy catalogs/türkçe/AmiWeatherForecasts.catalog SYS:Locale/Catalogs/türkçe ALL QUIET
+    copy catalogs/deutsch/AmiWeatherForecasts.catalog SYS:Locale/Catalogs/deutsch ALL QUIET
     echo " Copied catalogs."
     echo ""
     ask  " Please, press ENTER to continue."
